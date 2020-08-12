@@ -1,0 +1,100 @@
+---
+title: "Q1"
+author: "Xuxian Chen"
+date: "8/11/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(mosaic)
+library(tidyverse)
+library(ggplot2)
+```
+
+# Q1 CSV
+
+```{r gb}
+gb <- read.csv("../STA380/data/greenbuildings.csv")
+head(gb)
+gb$green_rating = as.factor(gb$green_rating)
+```
+
+## Graphic Presentation and Analysis
+
+### Does green housing have a higher rental price
+```{r pressure, echo=FALSE}
+ggplot(data = gb) + 
+  geom_point(mapping = aes(x = cluster_rent, y = Rent, color = green_rating)) +
+  labs(title = "Rental Price of Green Building and NonGreen Building",
+       subtitle="Across All Clusters")
+```
+There is large variation and outliners in the dataset. The eco-friendly building appears to have higher rental rate comparatively, looking at the same cluster_rent level.
+
+### What percentage of green buildings having a higher rental price than local market rental price? What about percentage of nongreen buildings?
+
+```{r}
+d1 = gb %>%
+  group_by(green_rating ) %>%
+  summarize(good_performance = sum(Rent > cluster_rent)/n())
+
+ggplot(data = d1) + 
+  geom_bar(mapping = aes(x = green_rating, y = good_performance ), stat='identity') +
+  labs(title = "Percentage of Buildings with Higher Rental Rate than Local Market Rental Rate")+ 
+  coord_flip()
+```
+**Proportionally, more green buildings have higher than market rental rate**
+
+### Reproduce the analysis of the excel guru to validate
+```{r}
+gb_filtered = filter(gb, leasing_rate>.1)
+
+gb_filtered %>%
+  group_by(green_rating) %>%
+  summarize(Rent.med = median(Rent))
+```
+So far the results support the EXCEL guru's analysis, that green buildings have a higher rental price comparatively. 
+Green Buildings have a 27.6 vs Nongreen Buildings' 25, but we want to know if green or nongreen causes the difference in price. In another words, how other factors play in determining rental rate?
+
+### Could it be: NonGreen building are mostly older buildings?
+```{r}
+ggplot(data = gb) + 
+  geom_point(mapping = aes(x = age, y = Rent, color = green_rating))+
+  labs(title = "Building Rent with different BUilding Age")
+```
+The green building did not show a strong pattern in higher rent, given the same building age
+
+### Could it be: Most Green buildings are renovated?
+```{r}
+gb %>%
+  group_by(green_rating) %>%
+  summarize(renovated.count = count(renovated > 0))
+
+gb_filtered = filter(gb, renovated>0)
+
+ggplot(data = gb_filtered) + 
+  geom_point(mapping = aes(x = cluster_rent, y = Rent, color = green_rating),stat='identity') +
+  labs(title = "Renovated Building in Local Market")
+```
+If both are renovated, green buildings generally have a higher rental price than the nongreen buildings in the same local market.
+
+
+### If we estimated the return of Green and NonGreen building of similar conditions
+```{r}
+hist(gb$stories)
+hist(gb$age)
+
+gb_filtered = filter(gb, 20 > stories, stories > 10, age < 25, age > 10)
+
+ggplot(data = gb_filtered) + 
+  geom_point(mapping = aes(x = cluster_rent, y = Rent, color = green_rating)) +
+  labs(title = "Rent per Square of Green Building and NonGreen Building in Similar Condition")
+gb_filtered %>%
+  group_by(green_rating) %>%
+  summarize(Rent.med = median(Rent))
+```
+There is a small green building premium but it is not as high as the EXCEL Guru estimated.
+
+## Modeling
+So far we have seen how green building appear to have a higher rantal rate, but we still cannot prove green building is having a higher rental rate. It could be an indirect results of others factors.
+

@@ -72,4 +72,18 @@ ggplot(data = gb_filtered) +
 gb_filtered %>%
   group_by(green_rating) %>%
   summarize(Rent.med = median(Rent))
-# There is a small green building premium but it is not as high as the EXCEL Guru estimated
+### There is a small green building premium but it is not as high as the EXCEL Guru estimated
+
+
+# Question 2
+abia <- read.csv("../STA380/data/ABIA.csv")
+View(abia)
+head(abia)
+
+d1 = abia %>%
+  group_by(Month  ) %>%
+  summarize(good_performance = sum(Rent > cluster_rent)/n())
+
+ggplot(data = abia) + 
+  geom_bar(mapping = aes(x = green_rating, y = good_performance ), stat='identity') +
+  labs(title = "BUildings with Higher Rent than local market Average Rent")

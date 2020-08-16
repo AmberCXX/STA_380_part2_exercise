@@ -1,0 +1,741 @@
+---
+title: "Excercises"
+author: "Siddhant Chauhan"
+date: "8/11/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+# Portfolio Modeling
+
+* We are buliding 3 different models with different risk levels. 
+
+Our chosen ETF's include SPY, SVXY, QQQ, YYY
+
+YYY - Amplify High Income ETF
+SPY - One of the safest ETFs
+SVXY - ProShares VIX Short-Term Futures ETF is high risk
+QQQ - Ivesco QQQ trust one of the largest
+IWF - iShares Russell 1000 Growth ETF
+LGLV -SPDR S TR/RUSSELL 1000 LOW VOLATILI
+
+
+
+
+```{r echo=FALSE}
+library(mosaic)
+library(quantmod)
+library(foreach)
+library(ggstance)
+
+
+# Import a few stocks
+mystocks = c("SPY", "SVXY", "QQQ", "YYY","IWF","LGLV")
+getSymbols(mystocks)
+
+# Adjust for splits and dividends
+SPYa = adjustOHLC(SPY)
+SVXYa = adjustOHLC(SVXY)
+QQQa = adjustOHLC(QQQ)
+YYYa = adjustOHLC(YYY)
+IWFa = adjustOHLC(IWF)
+LGLVa = adjustOHLC(LGLV)
+
+# Look at close-to-close changes
+plot(ClCl(SPYa))
+plot(ClCl(SVXYa))
+plot(ClCl(QQQa))
+plot(ClCl(YYYa))
+plot(ClCl(IWFa))
+plot(ClCl(LGLVa))
+
+
+
+# Combine close to close changes in a single matrix
+all_returns = cbind(ClCl(SPYa),ClCl(SVXYa),ClCl(QQQa),ClCl(YYYa),ClCl(IWFa),ClCl(LGLVa))
+head(all_returns)
+# first row is NA because we didn't have a "before" in our data
+all_returns = as.matrix(na.omit(all_returns))
+N = nrow(all_returns)
+
+# These returns can be viewed as draws from the joint distribution
+# strong correlation, but certainly not Gaussian!  
+pairs(all_returns)
+plot(all_returns[,1], type='l')
+
+# Look at the market returns over time
+plot(all_returns[,3], type='l')
+
+# are today's returns correlated with tomorrow's? 
+# not really!   
+plot(all_returns[1:(N-1),3], all_returns[2:N,3])
+
+# An autocorrelation plot: nothing there
+acf(all_returns[,3])
+
+# conclusion: returns uncorrelated from one day to the next
+# (makes sense, otherwise it'd be an easy inefficiency to exploit,
+# and market inefficiencies that are exploited tend to disappear as a result)
+
+
+
+
+
+```
+The starting wealth value is $100,000
+
+Simulation 1: Modeling a safe portfolio
+
+ETFs used: "SPY" , "QQQ", "LGLV"
+
+```{R Echo=False}
+
+#### Now use a bootstrap approach
+#### With more stocks
+
+mystocks = c("SPY", "SVXY","QQQ","YYY","IWF","LGLV")
+myprices = getSymbols(mystocks, from = "2014-01-01")
+
+
+# A chunk of code for adjusting all stocks
+# creates a new object adding 'a' to the end
+# For example, WMT becomes WMTa, etc
+for(ticker in mystocks) {
+  expr = paste0(ticker, "a = adjustOHLC(", ticker, ")")
+  eval(parse(text=expr))
+}
+
+head(SPYa)
+
+# Combine all the returns in a matrix
+all_returns = cbind(	ClCl(SPYa),
+                     ClCl(SVXYa),
+                     ClCl(QQQa),
+                     ClCl(YYYa),
+                     ClCl(IWFa),
+                     ClCl(LGLVa))
+head(all_returns)
+all_returns = as.matrix(na.omit(all_returns))
+
+# Compute the returns from the closing prices
+pairs(all_returns)
+
+# Sample a random return from the empirical joint distribution
+# This simulates a random day
+return.today = resample(all_returns, 1, orig.ids=FALSE) 
+
+initial_wealth = 100000
+
+sim1 = foreach(i=1:5000, .combine = rbind) %do% {
+  weights = c(0.4, 0.03, 0.3, 0.03, 0.02, 0.3)
+  total_wealth = initial_wealth
+  holdings = total_wealth * weights
+  n_days = 20
+  wealthtracker = rep(0, n_days)
+  
+  for(today in 1:n_days){
+    return_today = resample(all_returns, 1, orig.ids=FALSE)
+    holdings = holdings * (1 + return_today)
+    total_wealth = sum(holdings)
+    wealthtracker[today] = total_wealth
+    
+    # Rebalancing
+    holdings = total_wealth * weights
+  }
+  
+  wealthtracker
+}
+head(sim1)
+hist(sim1[,n_days], 50)
+plot(density(sim1[,n_days]))
+# Profit/loss
+hist(sim1[,n_days]- initial_wealth, breaks=30)
+conf_5Per = confint(sim1[,n_days]- initial_wealth, level = 0.90)$'5%'
+cat('\nAverage return of investement after 20 days', mean(sim1[,n_days]), "\n")
+cat('\n5% Value at Risk for safe portfolio-',conf_5Per, "\n")
+```
+
+```{r, echo=FALSE, include=FALSE}
+wealth_daywise = c()
+  
+for (i in 1:n_days){
+    wealth_daywise[i] = mean(sim1[,i]) 
+}
+days = 1:n_days
+df = data.frame(wealth_daywise, days)
+```
+
+
+```{r, echo=FALSE}
+ggplot(data=df, aes(x=days, y=wealth_daywise, group=1)) +
+  geom_line(color="red")+
+  geom_point() +
+  xlab('Days') +
+  ylab('Return of investments') + 
+  ggtitle('Safe Portfolio: Retruns over 20 days')
+```
+
+
+
+```{r, echo=FALSE}
+hist(sim1[,n_days], 50)
+plot(density(sim1[,n_days]))
+hist(sim1[,n_days]- initial_wealth, breaks=30)
+conf_5Per = confint(sim1[,n_days]- initial_wealth, level = 0.90)$'5%'
+print(cat('\nAverage return of investement after 20 days', mean(sim1[,n_days]), "\n"))
+cat('\n5% Value at Risk for safe portfolio-',conf_5Per, "\n")
+
+
+
+```
+
+* Model 2: High Risk Model
+
+Using ETFs: SVXY, YYY, IWF
+
+Distributed 90% of the total wealth among the low performing ETFs
+
+
+
+```{r, echo=FALSE, include=FALSE}
+sim2 = foreach(i=1:5000, .combine = rbind) %do% {
+  weights = c(0.01, 0.3, 0.03, 0.03, 0.4, 0.3)
+  total_wealth = initial_wealth
+  holdings = total_wealth * weights
+  n_days = 20
+  wealthtracker = rep(0, n_days)
+  
+  for(today in 1:n_days){
+    
+    return_today = resample(all_returns, 1, orig.ids=FALSE)
+    holdings = holdings * (1 + return_today)
+    total_wealth = sum(holdings)
+    wealthtracker[today] = total_wealth
+    
+    # Rebalancing
+    holdings = total_wealth * weights
+  }
+  
+  wealthtracker
+}
+head(sim2)
+hist(sim2[,n_days], 50)
+plot(density(sim2[,n_days]))
+# Profit/loss
+hist(sim2[,n_days]- initial_wealth, breaks=30)
+hist(sim2[,n_days]- initial_wealth, breaks=30)
+conf_5Per = confint(sim2[,n_days]- initial_wealth, level = 0.90)$'5%'
+cat('\nAverage return of investement after 20 days', mean(sim2[,n_days]), "\n")
+cat('\n5% Value at Risk for High portfolio-',conf_5Per, "\n")
+```
+
+
+```{r, echo=FALSE, include=FALSE}
+wealth_daywise = c()
+  
+for (i in 1:n_days){
+    wealth_daywise[i] = mean(sim2[,i]) 
+}
+days = 1:n_days
+df = data.frame(wealth_daywise, days)
+```
+
+
+```{r, echo=FALSE}
+ggplot(data=df, aes(x=days, y=wealth_daywise, group=1)) +
+  geom_line(color="red")+
+  geom_point() +
+  xlab('Days') +
+  ylab('Return of investments') + 
+  ggtitle('High Risk Portfolio: Retruns over 20 days')
+```
+
+```{r, echo=FALSE}
+hist(sim2[,n_days], 50)
+plot(density(sim2[,n_days]))
+# Profit/loss
+hist(sim2[,n_days]- initial_wealth, breaks=30)
+conf_5Per = confint(sim2[,n_days]- initial_wealth, level = 0.90)$'5%'
+cat('\nAverage return of investement after 20 days', mean(sim2[,n_days]), "\n")
+cat('\n5% Value at Risk for High portfolio-',conf_5Per, "\n")
+```
+
+
+Model 3: Using equal weights for all ETFs
+
+
+```{r, echo=FALSE, include=FALSE}
+sim3 = foreach(i=1:5000, .combine = rbind) %do% {
+  weights = c(0.12, 0.12, 0.12, 0.12, 0.12, 0.12)
+  total_wealth = initial_wealth
+  holdings = total_wealth * weights
+  n_days = 20
+  wealthtracker = rep(0, n_days)
+  
+  for(today in 1:n_days){
+    
+    return_today = resample(all_returns, 1, orig.ids=FALSE)
+    holdings = holdings * (1 + return_today)
+    total_wealth = sum(holdings)
+    wealthtracker[today] = total_wealth
+    
+    # Rebalancing
+    holdings = total_wealth * weights
+  }
+  
+  wealthtracker
+}
+head(sim3)
+```
+
+
+
+```{r, echo=FALSE}
+hist(sim3[,n_days], 50)
+plot(density(sim3[,n_days]))
+# Profit/loss
+hist(sim3[,n_days]- initial_wealth, breaks=30)
+conf_5Per = confint(sim3[,n_days]- initial_wealth, level = 0.90)$'5%'
+cat('\nAverage return of investement after 20 days', mean(sim3[,n_days]), "\n")
+cat('\n5% Value at Risk for High portfolio-',conf_5Per, "\n")
+```
+
+```{r, echo=FALSE, include=FALSE}
+wealth_daywise = c()
+for (i in 1:n_days){
+    wealth_daywise[i] = mean(sim3[,i]) 
+}
+days = 1:n_days
+df = data.frame(wealth_daywise, days)
+```
+
+
+```{r, echo=FALSE}
+ggplot(data=df, aes(x=days, y=wealth_daywise, group=1)) +
+  geom_line(color="red")+
+  geom_point() +
+  xlab('Days') +
+  ylab('Return of investments') + 
+  ggtitle('Diverse Portfolio: Retruns over 20 days')
+```
+
+# Summary
+
+The Safe model gave the best return on investment and out of the 6 ETFs chosen, 3 of them were defined as the safe model ETFs. The next model used was a high risk model as the equity was distributed among 3 of out of 6 ETFs that were known for their level of risk.Finally a 3rd model was used which gave equal weights to all the different ETFs to see the returs over the time period.
+
+The avg return on investment on Model 1 was 472560.3 with a VaR value of 333204.7
+The avg return on investment on Model 2 was 391992.9 with a VaR value of 238154.8
+The avg return on investment on Model 3 was 141.8352 with a VaR value of (-99874.28)
+
+The model 1 was the safe model portfolio and as expected produced the highest return on investment then following with the high risk model and finally the diverse model (Model 3) seemed to have a negative return on investment. These values could have been different if we used different ETFs in building our models.
+
+
+--------------------------------------------------------------------------------------
+
+# MARKET SEGMENTATION TASK
+
+
+Analyze this data as you see fit, and to prepare a concise report for NutrientH20 that identifies any interesting market segments that appear to stand out in their social-media audience. You have complete freedom in deciding how to pre-process the data and how to define "market segment." (Is it a group of correlated interests? A cluster? A latent factor? Etc.) Just use the data to come up with some interesting, well-supported insights about the audience, and be clear about what you did.
+
+```{r, echo = FALSE, include=FALSE}
+library(ggplot2)
+library(ggthemes)
+library(reshape2)
+library(RCurl)
+library(foreach)
+library(fpc)
+library(cluster)
+sm_file_name <- '/Users/siddchauhan/Documents/PROJECTS/UT MSBA/Stats bootcamp Files/Predictive Modeling/Predic Mod II Half/social_marketing.csv'
+social_m_raw <- read.csv(sm_file_name)
+social_m <- read.csv(sm_file_name)
+```
+
+
+
+```{r,echo = FALSE, include=FALSE}
+# Remove chatter and spam
+social_m$chatter<- NULL
+social_m$spam <- NULL
+social_m$adult <- NULL
+social_m$photo_sharing <- NULL 
+social_m$health_nutrition <- NULL 
+# Center and scale the data
+X = social_m[,(2:32)]
+X = scale(X, center=TRUE, scale=TRUE)
+# Extract the centers and scales from the rescaled data (which are named attributes)
+mu = attr(X,"scaled:center")
+sigma = attr(X,"scaled:scale")
+```
+
+```{r, echo = FALSE, include=FALSE}
+# Determine number of clusters
+#Elbow Method for finding the optimal number of clusters
+set.seed(12345)
+# Compute and plot wss for k = 2 to k = 15.
+k.max <- 15
+data <- X 
+wss <- sapply(1:k.max, 
+              function(k){kmeans(data, k, nstart=50,iter.max = 15 )$tot.withinss})
+wss
+plot(1:k.max, wss,
+     type="b", pch = 19, frame = FALSE, 
+     xlab="Number of clusters K",
+     ylab="Total within-clusters sum of squares")
+```
+
+
+
+```{r, echo = FALSE}
+# Run k-means with 10 clusters and 25 starts
+clust1 = kmeans(X, 10, nstart=25)
+#hard to visualized
+social_clust1 <- cbind(social_m, clust1$cluster)
+```
+
+
+```{r echo=FALSE, }
+plotcluster(social_m[,2:32], clust1$cluster)
+```
+
+
+
+```{r,echo = FALSE}
+#cluster info to main data 
+social_clust1_main <- as.data.frame(cbind(clust1$center[1,]*sigma + mu, 
+                            clust1$center[2,]*sigma + mu,
+                            clust1$center[3,]*sigma + mu,
+                            clust1$center[4,]*sigma + mu,
+                            clust1$center[5,]*sigma + mu,
+                            clust1$center[6,]*sigma + mu,
+                            clust1$center[7,]*sigma + mu,
+                            clust1$center[8,]*sigma + mu,
+                            clust1$center[9,]*sigma + mu,
+                            clust1$center[10,]*sigma + mu))
+summary(social_clust1_main)
+#Change column names
+names(social_clust1_main) <- c('Cluster_1',
+                'Cluster_2',
+                'Cluster_3',
+                'Cluster_4',
+                'Cluster_5',
+                'Cluster_6',
+                'Cluster_7',
+                'Cluster_8',
+                'Cluster_9',
+                'Cluster_10')
+# Must remove spam since it is the lowest in all 
+# similarly chatter appears in all the cluster with high values
+```
+
+
+
+```{r out.width=c('50%', '50%'), fig.show='hold',echo = FALSE}
+#df1 <- melt(social_clust1_main,"row.names")
+social_clust1_main$type <- row.names(social_clust1_main)
+#Cluster 1
+ggplot(social_clust1_main, aes(x =reorder(type, -Cluster_1) , y=Cluster_1)) +
+  geom_bar(stat="identity", position ="dodge") + 
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle=-40, hjust=.1)) + 
+  labs(title="Cluster 1",
+        x ="Category", y = "Cluster centre values")
+#cluster 2 
+ggplot(social_clust1_main, aes(x =reorder(type, -Cluster_2) , y=Cluster_2)) +
+  geom_bar(stat="identity", position ="dodge") + 
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle=-40, hjust=.1)) + 
+  labs(title="Cluster 2",
+        x ="Category", y = "Cluster centre values")
+#Cluster 3
+ggplot(social_clust1_main, aes(x =reorder(type, -Cluster_3) , y=Cluster_3)) +
+  geom_bar(stat="identity", position ="dodge") + 
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle=-40, hjust=.1)) + 
+  labs(title="Cluster 3",
+        x ="Category", y = "Cluster centre values")
+#Cluster 4
+ggplot(social_clust1_main, aes(x =reorder(type, -Cluster_4) , y=Cluster_4)) +
+  geom_bar(stat="identity", position ="dodge") + 
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle=-40, hjust=.1)) + 
+  labs(title="Cluster 4",
+        x ="Category", y = "Cluster centre values")
+#cluster 5
+ggplot(social_clust1_main, aes(x =reorder(type, -Cluster_5) , y=Cluster_5)) +
+  geom_bar(stat="identity", position ="dodge") + 
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle=-40, hjust=.1)) + 
+  labs(title="Cluster 5",
+        x ="Category", y = "Cluster centre values")
+#cluster 6
+ggplot(social_clust1_main, aes(x =reorder(type, -Cluster_6) , y=Cluster_6)) +
+  geom_bar(stat="identity", position ="dodge") + 
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle=-40, hjust=.1)) + 
+  labs(title="Cluster 6",
+        x ="Category", y = "Cluster centre values")
+#Cluster 7
+ggplot(social_clust1_main, aes(x =reorder(type, -Cluster_7) , y=Cluster_7)) +
+  geom_bar(stat="identity", position ="dodge") + 
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle=-40, hjust=.1)) + 
+  labs(title="Cluster 7",
+        x ="Category", y = "Cluster centre values")
+#Cluster 8
+ggplot(social_clust1_main, aes(x =reorder(type, -Cluster_8) , y=Cluster_8)) +
+  geom_bar(stat="identity", position ="dodge") + 
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle=-40, hjust=.1)) + 
+  labs(title="Cluster 8",
+        x ="Category", y = "Cluster centre values")
+#Cluster 9
+ggplot(social_clust1_main, aes(x =reorder(type, -Cluster_9) , y=Cluster_9)) +
+  geom_bar(stat="identity", position ="dodge") + 
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle=-40, hjust=.1)) + 
+  labs(title="Cluster 9",
+        x ="Category", y = "Cluster centre values")
+#Cluster 10
+ggplot(social_clust1_main, aes(x =reorder(type, -Cluster_10) , y=Cluster_10)) +
+  geom_bar(stat="identity", position ="dodge") + 
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle=-40, hjust=.1)) + 
+  labs(title="Cluster 10",
+        x ="Category", y = "Cluster centre values") 
+#+xlab("Category") + ylab("Cluster centre values") + title("Cluster 1")
+ # scale_x_discrete(limits = Cluster_)
+
+```
+
+
+
+#### **Correlation plot**
+
+```{r, echo=FALSE, include=FALSE}
+library('corrplot')
+```
+
+```{r, echo=FALSE}
+cormat <- round(cor(social_m_raw[,2:37]), 2)
+corrplot(cormat, method="circle")
+```
+
+
+
+A lot variables are correlated to each other from the different clusters. An example can be seen online gaming and college university has a higher correlation and even personal fitness and health nutrition which makes sense that they are correlated. A possibility could be to use **PCA** to help create fewer uncorrelated variables. 
+
+The variables chatter, spam, adult were removed
+
+Continuing onto futher PCA Analysis
+
+#### **Principal Component Analysis**
+
+```{r, echo=FALSE, include=FALSE}
+social_m_raw$chatter<- NULL
+social_m_raw$spam <- NULL
+social_m_raw$adult <- NULL
+social_m_raw$photo_sharing <- NULL 
+social_m_raw$health_nutrition <- NULL 
+#################### PCA #########################
+pca_sm = prcomp(social_m_raw[,2:32], scale=TRUE, center = TRUE)
+summary(pca_sm)
+#plot(pca_sm, type= 'l')
+```
+
+
+```{r, echo=FALSE}
+pca_var <-  pca_sm$sdev ^ 2
+pca_var1 <- pca_var / sum(pca_var)
+#Cumulative sum of variation explained
+plot(cumsum(pca_var1), xlab = "Principal Component", 
+     ylab = "Fraction of variance explained")
+```
+
+```{r, echo=TRUE}
+cumsum(pca_var1)[10]
+```
+
+At 10th PC = 63.37% of the variation is explained. 
+
+Using Kaiser rule: https://docs.displayr.com/wiki/Kaiser_Rule
+
+Picked 10 PC to use for futher analysis.
+
+```{r, echo=FALSE, include=FALSE}
+varimax(pca_sm$rotation[, 1:11])$loadings
+```
+
+
+```{r, echo=FALSE}
+scores = pca_sm$x
+pc_data <- as.data.frame(scores[,1:18])
+X <- pc_data
+```
+
+#### **K-Means**
+
+```{r, echo=FALSE, include=FALSE}
+library(LICORS)
+```
+
+```{r, echo=FALSE}
+# Determine number of clusters
+#Elbow Method for finding the optimal number of clusters
+set.seed(12345)
+# Compute and plot wss for k = 2 to k = 15.
+k.max <- 15
+data <- X 
+wss <- sapply(1:k.max, 
+              function(k){kmeanspp(data, k, nstart=10,iter.max = 10 )$tot.withinss})
+plot(1:k.max, wss,
+     type="b", pch = 19, frame = FALSE, 
+     xlab="Number of clusters K",
+     ylab="Total within-clusters sum of squares")
+```
+
+The code chunk above takes a while to run.
+
+
+
+It is difficult to find the number of clusters from the plot as the within SS decreases with number of clusters. 
+
+We have decided to use a smaller number such as 5 cluster since it is easier to intrepret and identify market segments. Let's also look at the where our points are using 5 clusters. 
+
+```{r, echo=FALSE}
+# Run k-means with 5 clusters and 15 starts
+clust1 = kmeanspp(X, 5, nstart=15)
+#hard to visualized
+social_clust1 <- cbind(social_m, clust1$cluster)
+```
+
+
+```{r, echo=FALSE, include=FALSE}
+library(cluster)
+library(HSAUR)
+library(fpc)
+```
+
+#### **Cluster visualization**
+
+```{r, echo=FALSE, include=TRUE}
+plotcluster(social_m[,2:32], clust1$cluster)
+```
+
+Some of the separation of the clusters seem intuitive enough to make more sense of them and figure out what they represent in the analysis.
+
+
+```{r, echo=FALSE, include=FALSE}
+#cluster info to main data 
+social_clust1_main <- as.data.frame(cbind(clust1$center[1,]*sigma + mu, 
+                            clust1$center[2,]*sigma + mu,
+                            clust1$center[3,]*sigma + mu,
+                            clust1$center[4,]*sigma + mu,
+                            clust1$center[5,]*sigma + mu))
+summary(social_clust1_main)
+#Change column names
+names(social_clust1_main) <- c('Cluster_1',
+                'Cluster_2',
+                'Cluster_3',
+                'Cluster_4',
+                'Cluster_5')
+                #'Cluster_6')
+```
+
+#### **Results**
+
+```{r out.width=c('50%', '50%'), fig.show='hold', echo=FALSE}
+social_clust1_main$type <- row.names(social_clust1_main)
+#Cluster 1
+ggplot(social_clust1_main, aes(x =reorder(type, -Cluster_1) , y=Cluster_1)) +
+  geom_bar(stat="identity", position ="dodge") + 
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle=-40, hjust=.1)) + 
+  labs(title="Cluster 1",
+        x ="Category", y = "Cluster centre values") 
+#cluster 2 
+ggplot(social_clust1_main, aes(x =reorder(type, -Cluster_2) , y=Cluster_2)) +
+  geom_bar(stat="identity", position ="dodge") + 
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle=-40, hjust=.1)) + 
+  labs(title="Cluster 2",
+        x ="Category", y = "Cluster centre values")
+#Cluster 3
+ggplot(social_clust1_main, aes(x =reorder(type, -Cluster_3) , y=Cluster_3)) +
+  geom_bar(stat="identity", position ="dodge") + 
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle=-40, hjust=.1)) + 
+  labs(title="Cluster 3",
+        x ="Category", y = "Cluster centre values")
+#Cluster 4
+ggplot(social_clust1_main, aes(x =reorder(type, -Cluster_4) , y=Cluster_4)) +
+  geom_bar(stat="identity", position ="dodge") + 
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle=-40, hjust=.1)) + 
+  labs(title="Cluster 4",
+        x ="Category", y = "Cluster centre values")
+#cluster 5
+ggplot(social_clust1_main, aes(x =reorder(type, -Cluster_5) , y=Cluster_5)) +
+  geom_bar(stat="identity", position ="dodge") + 
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle=-40, hjust=.1)) + 
+  labs(title="Cluster 5",
+        x ="Category", y = "Cluster centre values")
+```
+
+
+
+
+Based on the K-Means clustering, we can identify distinct market segments that NutrientH20 can potentially leverage to design specific marketing campaigns. 
+
+
+Some of the **Market Segments** identified include:
+- Sports_Fandom, Travel, Outdoors
+- Small_Business, Current Events
+- Food, cooking, college_uni, Personal fitness
+- Cooking, Personal Fitness, Food, Shopping, Fashion
+- Travel, Outdoors, Business, cooking
+
+Different clusters include some of the same interests and some unique ones. A lot of the interets are known to be related to each other such as travel and outdoors, small business rely on current events that impact their lives. College students are focused on personal fitness which aslo is related to cooking and food. There are many more that are closely related.
+
+
+
+Market Segmentation allows us to find and target a defined audience while tracking what their interests are. Using the segmented insights companies can use the insights to derive resources towards areas that will lead to higher growth and more profits.
+
+The Market segments however are not always the same once identified as over time they should be updated to match the audience as the audience which consists of users is always moving in and out of different segments.
+
+-----------------------------------------------------------------------------------------
+# ASSOCIATION RULE MINING
+
+
+
+### Use the data on grocery purchases in groceries.txt and find some interesting association rules for these shopping baskets. Pick your own thresholds for lift and confidence; just be clear what these thresholds are and how you picked them. Do your discovered item sets make sense? Present your discoveries in an interesting and concise way.
+
+###Notes:
+
+####Like with the first set of exercises: this is an exercise in visual and numerical story-telling. Do be clear in your description of what you've done, but keep the focus on the data, the figures, and the insights your analysis has drawn from the data.The data file is a list of baskets: one row per basket, with multiple items per row separated by commas. You'll have to cobble together a few utilities for processing this into the format expected by the "arules" package. (This is not intrinsically all that hard, but it is the kind of wrinkle you'll encounter frequently on real problems, where your software package expects data in one format and the data comes in a different format. Figuring out how to bridge that gap is part of the assignment, and so we won't be giving tips on this front.)
+
+
+

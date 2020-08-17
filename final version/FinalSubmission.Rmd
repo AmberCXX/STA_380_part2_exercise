@@ -1,0 +1,1546 @@
+---
+title: "Final"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#Visual story telling part 1: green buildings
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r cars}
+green = read.csv('greenbuildings.csv', header=T)
+
+```
+
+```{r}
+#Let us use the log response
+rent_all <- log(green$Rent)
+
+#subset of dataset for simplicity, dont do this try to include all in dataset
+all_sub <- green[,-c(0,1,2,3)] # lose lmedval and the room totals
+n = dim(all_sub)[1] #Sample size
+tr = sample(1:n, #Sample indices do be used in training
+            size = 3000, #Sample will have 5000 observation
+            replace = FALSE) #Without replacement
+
+
+#Create a full matrix of interactions (only necessary for linear model)
+#Do the normalization only for main variables.
+xxall_rent_sub <- model.matrix(~., data=data.frame(scale(all_sub)))[,-1] # the . syntax multiplies data by each long and lat, and then by both
+allData = data.frame(rent_all,all_sub)
+
+#Two models initially, sets the scope/boundaries for search
+null = lm(rent_all~1, data=allData[tr,]) #only has an intercept
+full = glm(rent_all~., data=allData[tr,]) #Has all the selected variables
+
+#Let us select models by stepwise
+
+
+regBack = step(full, #Starting with the full model
+               direction="backward", #And deleting variables
+               k=log(length(tr))) #This is BIC
+
+
+regForward = step(null, #The most simple model
+                  scope=formula(full), #The most complicated model
+                  direction="both", #Add or delete variables
+                  k=log(length(tr))) #This is BIC
+
+#the total number of degree days (either heating or cooling) in the building's region in 2007.
+
+```
+
+
+```{r}
+# Extract the buildings with green ratings
+green_only = subset(green, green_rating==1)#Let us use the log response
+green_rent <- log(green_only$Rent)
+
+#subset of dataset for simplicity, dont do this try to include all in dataset
+green_rent_sub <- green_only[,-c(0,1,2,3)] # lose lmedval and the room totals
+n = dim(green_rent_sub)[1] #Sample size
+tr = sample(1:n, #Sample indices do be used in training
+            size = 300, #Sample will have 5000 observation
+            replace = FALSE) #Without replacement
+
+
+#Create a full matrix of interactions (only necessary for linear model)
+#Do the normalization only for main variables.
+xxgreen_rent_sub <- model.matrix(~., data=data.frame(scale(green_rent_sub)))[,-1] # the . syntax multiplies data by each long and lat, and then by both
+greenData = data.frame(green_rent,green_rent_sub)
+
+#Two models initially, sets the scope/boundaries for search
+null = lm(green_rent~1, data=greenData[tr,]) #only has an intercept
+full = glm(green_rent~., data=greenData[tr,]) #Has all the selected variables
+
+#Let us select models by stepwise
+
+regBack = step(full, #Starting with the full model
+               direction="backward", #And deleting variables
+               k=log(length(tr))) #This is BIC
+regForward = step(null, #The most simple model
+                  scope=formula(full), #The most complicated model
+                  direction="both", #Add or delete variables
+                  k=log(length(tr))) #This is BIC
+
+#Step:  AIC=-1319.5 green_rent ~ Rent + total_dd_07 + Electricity_Costs + cluster_rent
+
+```
+
+```{r}
+not_green = subset(green, green_rating==0)
+dim(not_green)
+
+#Let us use the log response
+not_green_rent <- log(not_green$Rent)
+
+#subset of dataset for simplicity, dont do this try to include all in dataset
+not_green_sub <- not_green[,-c(0,1,2,3)] # lose lmedval and the room totals
+n = dim(not_green_sub)[1] #Sample size
+tr = sample(1:n, #Sample indices do be used in training
+            size = 3000, #Sample will have 5000 observation
+            replace = FALSE) #Without replacement
+
+
+#Create a full matrix of interactions (only necessary for linear model)
+#Do the normalization only for main variables.
+xxnot_green_sub <- model.matrix(~., data=data.frame(scale(not_green_sub)))[,-1] # the . syntax multiplies data by each long and lat, and then by both
+notgreenData = data.frame(not_green_rent,not_green_sub)
+
+#Two models initially, sets the scope/boundaries for search
+null = lm(not_green_rent~1, data=notgreenData[tr,]) #only has an intercept
+full = glm(not_green_rent~., data=notgreenData[tr,]) #Has all the selected variables
+
+#Let us select models by stepwise
+
+regBack = step(full, #Starting with the full model
+               direction="backward", #And deleting variables
+               k=log(length(tr))) #This is BIC
+regForward = step(null, #The most simple model
+                  scope=formula(full), #The most complicated model
+                  direction="both", #Add or delete variables
+                  k=log(length(tr))) #This is BIC
+#Step:  AIC=-11140.9
+not_green_rent ~ Rent + total_dd_07 + cluster_rent + Electricity_Costs + 
+    age
+
+
+
+```
+
+
+```{r}
+hist(not_green$Rent, 25)
+mean(not_green$Rent)
+```
+
+```{r}
+hist(green_only$Rent, 25)
+mean(green_only$Rent)
+```
+
+```{r}
+xbar = mean(green_only$Rent)
+sig_hat = sd(green_only$Rent)
+se_hat = sig_hat/sqrt(nrow(green_only))
+xbar + c(-1.96,1.96)*se_hat
+
+#normal confidence interval for sample mean
+```
+```{r}
+model1 = lm(Rent ~ 1, data=green_only)
+confint(model1, level=0.95)
+```
+
+```{r}
+#bootstrapping
+library(mosaic)
+green_only_boot = resample(green_only)
+mean(green_only_boot$Rent)
+
+```
+
+```{r}
+model2 = lm(Rent ~ 1, data=not_green)
+confint(model2, level=0.95)
+```
+
+```{r}
+green_all_boot = resample(not_green)
+mean(not_green$Rent)
+```
+
+##Summary
+
+Some exploratory data to get a feel for the dataset. We can understand here the relationship between rent for green buildings and rent for not buildings. It is confirmed here that the difference between the rent prices exists for green biuldings and not green buidlings. At a 97.5% confidence interval, we are able to see that the interval for rent prices for not green buildings does not overlap with the green interval rents, showing that there is a higher cost (or more revenue) from having a green building. However, is it because it is green, or some other variable in the background that is correlated with green buildings, that drives up rent prices?
+
+To take a deeper look at this, I decided to do a stepwise regression model for: all buildings, green only, and not green buildings to see what variables impacted rent the most, and if there were any changes or patterns among these.
+
+For all buildings, we had an AIC=-10971.86
+rent_all ~ Rent + total_dd_07 + cluster_rent + Electricity_Costs +  age
+
+It seems for all buildings, what impacts rent the most would be:
+* the age of a building, which makes sense, the older the building, the more depreciated, and the less valued by customers and the market
+* cluster rent (a measure of average rent per square-foot per calendar year in the building's local market) which makes sense, because if the market is in new york, it will be more expensive than texas
+* total.dd.07 the total number of degree days (either heating or cooling) in the building's region in 2007, this one seemed not as obvious to me but, seeing electricity costs is also on here, the correlation between degrees and electricity costs has a correlation of 0.67, showing there is some correlation. the higher it is outside, the colder it will be inside and vice versa
+* electricity costs makese sense since it is a variable costs and is paid monthly just like rent, can determine the overall amount charged
+
+For green buildings, we had an AIC=-1319.5
+
+green_rent ~ Rent + total_dd_07 + Electricity_Costs + cluster_rent
+
+As explained above, this contains everything but age
+
+To measure if this is different than buildings that are not green
+we had an AIC=-11140.9
+not_green_rent ~ Rent + total_dd_07 + cluster_rent + Electricity_Costs + age
+
+The only thing that varies from all buildings, not green buildings and the green buildings is that green buildings are not as impacted by age.
+
+As we take the mean and median age for buildings, green_only has a mean age of 23.84526 and a median of 22 while not green buildings are much older with  a mean of 49.46733 and a median of 37.
+
+While measuring the correlation between rent price and age it shows only a 0.10, the prices could be determined another way (cluster rent and rent have a correlation of 0.7593399). Having such a big difference in age of buildings could suggest that since green buildings are often newer, they have nicer places and people usually pay more for newer buildings.
+
+However, another reason could be electricity costs. 
+Green buildings have a higher correlation with the total.dd.07 and electricity costs (-0.7178119) than all buildings (-0.657102) and not green buildings (0.6522979). This could suggest that green buildings are impacted more by the heat and therefore use electricity more or less accordingly. Green buildings also have a higher mean average for electricity costs (0.03158175) than non green buildings (0.03089946) showing they do on average spend more on electricity. More electricity usage, more electricity costs and bills, higher rent, and higher revenue. This makes sense because while green buildings try to lower costs such as water, lighting, disposal etc, this is coming from somewhere else (solar panels, different sources of heating) that could affect electricity in different ways or even cause their customers to seek to use more electricity.
+
+I believe there is possibility of confounding variables for the relationship between rent and green status. Affirmed by our stepmodels, green status wasn't even chosen as a significant variable in any of the samples, showing that it might not be the reason for rent prices. 
+
+Furthermore, there's a lot that goes into rent prices, such as the area you live in, how old the building is, etc. When looking at green buildings, you are looking at newer buildings, and the fact that the building is new could affect the amount you charge for rent. When looking at the energy source changes for green buildings, there is always an effect of redirection of that energy, and that confounding variable could come from the electricity bills.
+
+I believe that the developer should look further into resources to determine what exactly causes rent prices to be higher, and I believe it is not due to it being green, but the effects and attributes that being green has. You do not want to solely base your profit off being green, because following this model, each year you would make less due to the building getting older, or maybe higher electricity costs for the company to maintain being green. You need to see specifically what is causing a higher rent price, and not rely on just being green because background variables are at work here.
+
+```{r}
+cor(green$total_dd_07, green$Electricity_Costs)
+```
+```{r}
+mean(green_only$age)
+median(green_only$age)
+```
+```{r}
+mean(not_green$age)
+median(not_green$age)
+```
+```{r}
+cor(green$Rent, green$age)
+```
+```{r}
+cor(green$Rent, green$cluster_rent)
+```
+
+
+```{r}
+print(cor(green_only$Rent, green_only$Electricity_Costs))
+plot(green_only$Rent, green_only$Electricity_Costs)
+```
+```{r}
+cor(green$Rent, green$Electricity_Costs)
+plot(green$Rent, green$Electricity_Costs)
+```
+
+```{r}
+print(cor(green_only$total_dd_07, green_only$Electricity_Costs))
+plot(green_only$total_dd_07, green_only$Electricity_Costs)
+```
+
+```{r}
+print(cor(green$total_dd_07, green$Electricity_Costs))
+plot(green$total_dd_07, green$Electricity_Costs)
+```
+```{r}
+print(cor(not_green$total_dd_07, not_green$Electricity_Costs))
+
+```
+
+
+```{r}
+mean(green_only$Electricity_Costs)
+```
+
+```{r}
+mean(not_green$Electricity_Costs)
+```
+
+Going more in depth into the previous analysis, we did more data exploration to see if there were more patterns or other ones that strengthened our previous beliefs.
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(mosaic)
+library(tidyverse)
+library(ggplot2)
+```
+
+# Q1 CSV
+
+```{r gb}
+gb <- read.csv("../STA380/data/greenbuildings.csv")
+head(gb)
+gb$green_rating = as.factor(gb$green_rating)
+```
+
+## Graphic Presentation and Analysis
+
+### Does green housing have a higher rental price
+```{r pressure, echo=FALSE}
+ggplot(data = gb) + 
+  geom_point(mapping = aes(x = cluster_rent, y = Rent, color = green_rating)) +
+  labs(title = "Rental Price of Green Building and NonGreen Building",
+       subtitle="Across All Clusters")
+```
+There is large variation and outliners in the dataset. The eco-friendly building appears to have higher rental rate comparatively, looking at the same cluster_rent level.
+
+### What percentage of green buildings having a higher rental price than local market rental price? What about percentage of nongreen buildings?
+
+```{r}
+d1 = gb %>%
+  group_by(green_rating ) %>%
+  summarize(good_performance = sum(Rent > cluster_rent)/n())
+
+ggplot(data = d1) + 
+  geom_bar(mapping = aes(x = green_rating, y = good_performance ), stat='identity') +
+  labs(title = "Percentage of Buildings with Higher Rental Rate than Local Market Rental Rate")+ 
+  coord_flip()
+```
+**Proportionally, more green buildings have higher than market rental rate**
+
+### Reproduce the analysis of the excel guru to validate
+```{r}
+gb_filtered = filter(gb, leasing_rate>.1)
+
+gb_filtered %>%
+  group_by(green_rating) %>%
+  summarize(Rent.med = median(Rent))
+```
+So far the results support the EXCEL guru's analysis, that green buildings have a higher rental price comparatively. 
+Green Buildings have a 27.6 vs Nongreen Buildings' 25, but we want to know if green or nongreen causes the difference in price. In another words, how other factors play in determining rental rate?
+
+### Could it be: NonGreen building are mostly older buildings?
+```{r}
+ggplot(data = gb) + 
+  geom_point(mapping = aes(x = age, y = Rent, color = green_rating))+
+  labs(title = "Building Rent with different BUilding Age")
+```
+The green building did not show a strong pattern in higher rent, given the same building age
+
+### Could it be: Most Green buildings are renovated?
+```{r}
+gb %>%
+  group_by(green_rating) %>%
+  summarize(renovated.count = count(renovated > 0))
+
+gb_filtered = filter(gb, renovated>0)
+
+ggplot(data = gb_filtered) + 
+  geom_point(mapping = aes(x = cluster_rent, y = Rent, color = green_rating),stat='identity') +
+  labs(title = "Renovated Building in Local Market")
+```
+If both are renovated, green buildings generally have a higher rental price than the nongreen buildings in the same local market.
+
+
+### If we estimated the return of Green and NonGreen building of similar conditions
+```{r}
+hist(gb$stories)
+hist(gb$age)
+
+gb_filtered = filter(gb, 20 > stories, stories > 10, age < 25, age > 10)
+
+ggplot(data = gb_filtered) + 
+  geom_point(mapping = aes(x = cluster_rent, y = Rent, color = green_rating)) +
+  labs(title = "Rent per Square of Green Building and NonGreen Building in Similar Condition")
+gb_filtered %>%
+  group_by(green_rating) %>%
+  summarize(Rent.med = median(Rent))
+```
+There is a small green building premium but it is not as high as the EXCEL Guru estimated.
+
+## Modeling
+So far we have seen how green building appear to have a higher rental rate, but we still cannot prove green building is having a higher rental rate. It could be an indirect results of others factors.
+
+# Visual story telling part 2: 
+## Read Data
+
+```{r warning=FALSE, message=FALSE,results='hide'}
+ABIA<- read.csv("https://raw.githubusercontent.com/jgscott/STA380/master/data/ABIA.csv")
+View(ABIA)
+dim(ABIA)
+str(ABIA)
+```
+
+##Check the correlation between each variables
+
+```{r,message=FALSE,warning=FALSE}
+library("GGally")
+# ggcorr(): Plot a correlation matrix
+ggcorr(data = ABIA, palette = "RdYlGn",
+       label = TRUE, label_color = "black")
+```
+Carrier Delay and LateAircraf Delay with the 0.6 seem to be more correlated with Departure Delay and Arrival Delay than any other kinds of delay, why?
+
+```{r,message=FALSE,warning=FALSE}
+library(magrittr)  
+library(dplyr) 
+new=ABIA %>% replace(is.na(.), 0)
+colMeans(new['CarrierDelay'])
+colMeans(new['WeatherDelay'])
+colMeans(new['NASDelay'])
+colMeans(new['SecurityDelay'])
+colMeans(new['LateAircraftDelay'])
+```
+When we looked at the average delay minutes of each type, we noticed that LateAircraftDelay and CarrierDelay postpone more time.
+Whatever cause these two types of delay might require more time to deal with. That's why they are high correlated to DepDelay amd ArrDelay.
+
+--------------------------------
+
+##What is the most common reason of delay
+
+```{r,warning=FALSE}
+new=ABIA %>% replace(is.na(.), 0)
+a=colSums(new != 0)
+a['CarrierDelay']
+a['WeatherDelay']
+a['NASDelay']
+a['SecurityDelay']
+a['LateAircraftDelay']
+```
+The most common reason of delay is actually NASDelay. NAS Delay refers to all airport operations, heavy traffic volume, and flight delays caused by aviation management. By comparison
+it can probably be solved in a short time.
+
+##The most common reason of cancellation
+
+```{r,warning=FALSE}
+cancel=dplyr::count(ABIA, CancellationCode, sort = TRUE)
+#(A = carrier, B = weather, C = NAS, D = security)
+cancel
+```
+According to the count of cacellation code, Carrier Delay is the most common reason.The fligts delay  due to reasons such as emergency maintenance of the aircraft, crew deployment, baggage storage, and aircraft filling in fuel.
+
+So suprised the most common reason of delay was not weather.
+
+---------------------------------------------
+
+## Basic information about flights
+
+##Flights each month
+```{r}
+
+hist(x=ABIA$Month, 
+     main="Flights each Month",         
+     xlab="Month",                      
+     ylab="Frequency") 
+
+```
+More flights during summer, probably because of the summer vacation. (May~July)
+
+##Flights each weekdays
+```{r,message=FALSE}
+week <- group_by(ABIA, DayOfWeek)
+count <- summarise(week,count = n())
+count
+hist(x=ABIA$DayOfWeek, 
+     main="Flights each week day",         
+     xlab="week",                      
+     ylab="Frequency") 
+```
+More flights on wednesday.
+
+##Flights to Austin
+
+```{r}
+to_austin=ABIA[ABIA$Dest == 'AUS',]
+dplyr::count(to_austin, Origin, sort = TRUE)
+```
+
+
+![Flights to Austin](https://raw.githubusercontent.com/AmberCXX/STA_380_part2_exercise/master/map.jpg)
+
+Top three numbers of flights are from two Dallas airports and Houston. 
+
+
+##fly from Austin
+```{r}
+away_austin=ABIA[ABIA$Origin == 'AUS',]
+dplyr::count(away_austin, Dest, sort = TRUE)
+```
+Top three for flghts fly from Austin remain the same.
+
+```{r}
+densityplot( ~ Distance ,      
+             data=ABIA
+)
+```
+Mostly are short distance flghts less than 500 miles
+
+```{r}
+boxplot(formula = AirTime ~ UniqueCarrier,  
+        data = ABIA,       
+        xlab = "Carriers code",          
+        ylab = "Airtime(min)",    
+        col ="blue")       
+
+```
+B6 is JetBlue. This carrier seems to fly logner air time in minutes. Is it because its destinations tend to be farer?
+
+```{r}
+
+b=summarise(group_by(new, UniqueCarrier), count(UniqueCarrier))
+
+b
+```
+
+##Average miles of each carriers
+```{r}
+
+c=summarise(group_by(new, UniqueCarrier), sum(Distance))
+c
+```
+
+```{r}
+m=merge(c, b, by.x="UniqueCarrier", by.y="UniqueCarrier")
+m['frac']=m['sum(Distance)']/m['count(UniqueCarrier)']
+m
+```
+JetBlue tends to fly longer distances. So its total Air time is longest among all carriers.
+
+#Question 3: Portfolio Modeling
+
+* We are buliding 3 different models with different risk levels. 
+
+Our chosen ETF's include SPY, SVXY, QQQ, YYY
+
+YYY - Amplify High Income ETF
+SPY - One of the safest ETFs
+SVXY - ProShares VIX Short-Term Futures ETF is high risk
+QQQ - Ivesco QQQ trust one of the largest
+IWF - iShares Russell 1000 Growth ETF
+LGLV -SPDR S TR/RUSSELL 1000 LOW VOLATILI
+
+```{r echo=FALSE}
+library(mosaic)
+library(quantmod)
+library(foreach)
+library(ggstance)
+
+
+# Import a few stocks
+mystocks = c("SPY", "SVXY", "QQQ", "YYY","IWF","LGLV")
+getSymbols(mystocks)
+
+# Adjust for splits and dividends
+SPYa = adjustOHLC(SPY)
+SVXYa = adjustOHLC(SVXY)
+QQQa = adjustOHLC(QQQ)
+YYYa = adjustOHLC(YYY)
+IWFa = adjustOHLC(IWF)
+LGLVa = adjustOHLC(LGLV)
+
+# Look at close-to-close changes
+plot(ClCl(SPYa))
+plot(ClCl(SVXYa))
+plot(ClCl(QQQa))
+plot(ClCl(YYYa))
+plot(ClCl(IWFa))
+plot(ClCl(LGLVa))
+
+
+
+# Combine close to close changes in a single matrix
+all_returns = cbind(ClCl(SPYa),ClCl(SVXYa),ClCl(QQQa),ClCl(YYYa),ClCl(IWFa),ClCl(LGLVa))
+head(all_returns)
+# first row is NA because we didn't have a "before" in our data
+all_returns = as.matrix(na.omit(all_returns))
+N = nrow(all_returns)
+
+# These returns can be viewed as draws from the joint distribution
+# strong correlation, but certainly not Gaussian!  
+pairs(all_returns)
+plot(all_returns[,1], type='l')
+
+# Look at the market returns over time
+plot(all_returns[,3], type='l')
+
+# are today's returns correlated with tomorrow's? 
+# not really!   
+plot(all_returns[1:(N-1),3], all_returns[2:N,3])
+
+# An autocorrelation plot: nothing there
+acf(all_returns[,3])
+
+# conclusion: returns uncorrelated from one day to the next
+# (makes sense, otherwise it'd be an easy inefficiency to exploit,
+# and market inefficiencies that are exploited tend to disappear as a result)
+
+
+
+
+
+```
+The starting wealth value is $100,000
+
+Simulation 1: Modeling a safe portfolio
+
+ETFs used: "SPY" , "QQQ", "LGLV"
+
+```{R Echo=False}
+
+#### Now use a bootstrap approach
+#### With more stocks
+
+mystocks = c("SPY", "SVXY","QQQ","YYY","IWF","LGLV")
+myprices = getSymbols(mystocks, from = "2014-01-01")
+
+
+# A chunk of code for adjusting all stocks
+# creates a new object adding 'a' to the end
+# For example, WMT becomes WMTa, etc
+for(ticker in mystocks) {
+  expr = paste0(ticker, "a = adjustOHLC(", ticker, ")")
+  eval(parse(text=expr))
+}
+
+head(SPYa)
+
+# Combine all the returns in a matrix
+all_returns = cbind(	ClCl(SPYa),
+                     ClCl(SVXYa),
+                     ClCl(QQQa),
+                     ClCl(YYYa),
+                     ClCl(IWFa),
+                     ClCl(LGLVa))
+head(all_returns)
+all_returns = as.matrix(na.omit(all_returns))
+
+# Compute the returns from the closing prices
+pairs(all_returns)
+
+# Sample a random return from the empirical joint distribution
+# This simulates a random day
+return.today = resample(all_returns, 1, orig.ids=FALSE) 
+
+initial_wealth = 100000
+
+sim1 = foreach(i=1:5000, .combine = rbind) %do% {
+  weights = c(0.4, 0.03, 0.3, 0.03, 0.02, 0.3)
+  total_wealth = initial_wealth
+  holdings = total_wealth * weights
+  n_days = 20
+  wealthtracker = rep(0, n_days)
+  
+  for(today in 1:n_days){
+    return_today = resample(all_returns, 1, orig.ids=FALSE)
+    holdings = holdings * (1 + return_today)
+    total_wealth = sum(holdings)
+    wealthtracker[today] = total_wealth
+    
+    # Rebalancing
+    holdings = total_wealth * weights
+  }
+  
+  wealthtracker
+}
+head(sim1)
+hist(sim1[,n_days], 50)
+plot(density(sim1[,n_days]))
+# Profit/loss
+hist(sim1[,n_days]- initial_wealth, breaks=30)
+conf_5Per = confint(sim1[,n_days]- initial_wealth, level = 0.90)$'5%'
+cat('\nAverage return of investement after 20 days', mean(sim1[,n_days]), "\n")
+cat('\n5% Value at Risk for safe portfolio-',conf_5Per, "\n")
+```
+
+```{r, echo=FALSE, include=FALSE}
+wealth_daywise = c()
+  
+for (i in 1:n_days){
+    wealth_daywise[i] = mean(sim1[,i]) 
+}
+days = 1:n_days
+df = data.frame(wealth_daywise, days)
+```
+
+
+```{r, echo=FALSE}
+ggplot(data=df, aes(x=days, y=wealth_daywise, group=1)) +
+  geom_line(color="red")+
+  geom_point() +
+  xlab('Days') +
+  ylab('Return of investments') + 
+  ggtitle('Safe Portfolio: Retruns over 20 days')
+```
+
+```{r, echo=FALSE}
+hist(sim1[,n_days], 50)
+plot(density(sim1[,n_days]))
+hist(sim1[,n_days]- initial_wealth, breaks=30)
+conf_5Per = confint(sim1[,n_days]- initial_wealth, level = 0.90)$'5%'
+print(cat('\nAverage return of investement after 20 days', mean(sim1[,n_days]), "\n"))
+cat('\n5% Value at Risk for safe portfolio-',conf_5Per, "\n")
+
+
+
+```
+
+##Model 2: High Risk Model
+
+Using ETFs: SVXY, YYY, IWF
+
+Distributed 90% of the total wealth among the low performing ETFs
+
+```{r, echo=FALSE, include=FALSE}
+sim2 = foreach(i=1:5000, .combine = rbind) %do% {
+  weights = c(0.01, 0.3, 0.03, 0.03, 0.4, 0.3)
+  total_wealth = initial_wealth
+  holdings = total_wealth * weights
+  n_days = 20
+  wealthtracker = rep(0, n_days)
+  
+  for(today in 1:n_days){
+    
+    return_today = resample(all_returns, 1, orig.ids=FALSE)
+    holdings = holdings * (1 + return_today)
+    total_wealth = sum(holdings)
+    wealthtracker[today] = total_wealth
+    
+    # Rebalancing
+    holdings = total_wealth * weights
+  }
+  
+  wealthtracker
+}
+head(sim2)
+hist(sim2[,n_days], 50)
+plot(density(sim2[,n_days]))
+# Profit/loss
+hist(sim2[,n_days]- initial_wealth, breaks=30)
+hist(sim2[,n_days]- initial_wealth, breaks=30)
+conf_5Per = confint(sim2[,n_days]- initial_wealth, level = 0.90)$'5%'
+cat('\nAverage return of investement after 20 days', mean(sim2[,n_days]), "\n")
+cat('\n5% Value at Risk for High portfolio-',conf_5Per, "\n")
+```
+
+
+```{r, echo=FALSE, include=FALSE}
+wealth_daywise = c()
+  
+for (i in 1:n_days){
+    wealth_daywise[i] = mean(sim2[,i]) 
+}
+days = 1:n_days
+df = data.frame(wealth_daywise, days)
+```
+
+
+```{r, echo=FALSE}
+ggplot(data=df, aes(x=days, y=wealth_daywise, group=1)) +
+  geom_line(color="red")+
+  geom_point() +
+  xlab('Days') +
+  ylab('Return of investments') + 
+  ggtitle('High Risk Portfolio: Retruns over 20 days')
+```
+
+```{r, echo=FALSE}
+hist(sim2[,n_days], 50)
+plot(density(sim2[,n_days]))
+# Profit/loss
+hist(sim2[,n_days]- initial_wealth, breaks=30)
+conf_5Per = confint(sim2[,n_days]- initial_wealth, level = 0.90)$'5%'
+cat('\nAverage return of investement after 20 days', mean(sim2[,n_days]), "\n")
+cat('\n5% Value at Risk for High portfolio-',conf_5Per, "\n")
+```
+
+
+Model 3: Using equal weights for all ETFs
+
+
+```{r, echo=FALSE, include=FALSE}
+sim3 = foreach(i=1:5000, .combine = rbind) %do% {
+  weights = c(0.12, 0.12, 0.12, 0.12, 0.12, 0.12)
+  total_wealth = initial_wealth
+  holdings = total_wealth * weights
+  n_days = 20
+  wealthtracker = rep(0, n_days)
+  
+  for(today in 1:n_days){
+    
+    return_today = resample(all_returns, 1, orig.ids=FALSE)
+    holdings = holdings * (1 + return_today)
+    total_wealth = sum(holdings)
+    wealthtracker[today] = total_wealth
+    
+    # Rebalancing
+    holdings = total_wealth * weights
+  }
+  
+  wealthtracker
+}
+head(sim3)
+```
+
+
+```{r, echo=FALSE}
+hist(sim3[,n_days], 50)
+plot(density(sim3[,n_days]))
+# Profit/loss
+hist(sim3[,n_days]- initial_wealth, breaks=30)
+conf_5Per = confint(sim3[,n_days]- initial_wealth, level = 0.90)$'5%'
+cat('\nAverage return of investement after 20 days', mean(sim3[,n_days]), "\n")
+cat('\n5% Value at Risk for High portfolio-',conf_5Per, "\n")
+```
+
+```{r, echo=FALSE, include=FALSE}
+wealth_daywise = c()
+for (i in 1:n_days){
+    wealth_daywise[i] = mean(sim3[,i]) 
+}
+days = 1:n_days
+df = data.frame(wealth_daywise, days)
+```
+
+
+```{r, echo=FALSE}
+ggplot(data=df, aes(x=days, y=wealth_daywise, group=1)) +
+  geom_line(color="red")+
+  geom_point() +
+  xlab('Days') +
+  ylab('Return of investments') + 
+  ggtitle('Diverse Portfolio: Retruns over 20 days')
+```
+
+##Summary
+
+The Safe model gave the best return on investment and out of the 6 ETFs chosen, 3 of them were defined as the safe model ETFs. The next model used was a high risk model as the equity was distributed among 3 of out of 6 ETFs that were known for their level of risk.Finally a 3rd model was used which gave equal weights to all the different ETFs to see the returs over the time period.
+
+The avg return on investment on Model 1 was 472560.3 with a VaR value of 333204.7
+The avg return on investment on Model 2 was 391992.9 with a VaR value of 238154.8
+The avg return on investment on Model 3 was 141.8352 with a VaR value of (-99874.28)
+
+The model 1 was the safe model portfolio and as expected produced the highest return on investment then following with the high risk model and finally the diverse model (Model 3) seemed to have a negative return on investment. These values could have been different if we used different ETFs in building our models.
+
+#Question 4: Market Segmentation
+
+```{r, echo = FALSE, include=FALSE}
+library(ggplot2)
+library(ggthemes)
+library(reshape2)
+library(RCurl)
+library(foreach)
+library(fpc)
+library(cluster)
+sm_file_name <- 'social_marketing.csv'
+social_m_raw <- read.csv(sm_file_name)
+social_m <- read.csv(sm_file_name)
+```
+
+
+```{r,echo = FALSE, include=FALSE}
+# Remove chatter and spam
+social_m$chatter<- NULL
+social_m$spam <- NULL
+social_m$adult <- NULL
+social_m$photo_sharing <- NULL 
+social_m$health_nutrition <- NULL 
+# Center and scale the data
+X = social_m[,(2:32)]
+X = scale(X, center=TRUE, scale=TRUE)
+# Extract the centers and scales from the rescaled data (which are named attributes)
+mu = attr(X,"scaled:center")
+sigma = attr(X,"scaled:scale")
+```
+
+```{r, echo = FALSE, include=FALSE}
+# Determine number of clusters
+#Elbow Method for finding the optimal number of clusters
+set.seed(12345)
+# Compute and plot wss for k = 2 to k = 15.
+k.max <- 15
+data <- X 
+wss <- sapply(1:k.max, 
+              function(k){kmeans(data, k, nstart=50,iter.max = 15 )$tot.withinss})
+wss
+plot(1:k.max, wss,
+     type="b", pch = 19, frame = FALSE, 
+     xlab="Number of clusters K",
+     ylab="Total within-clusters sum of squares")
+```
+
+
+```{r, echo = FALSE}
+# Run k-means with 10 clusters and 25 starts
+clust1 = kmeans(X, 10, nstart=25)
+#hard to visualized
+social_clust1 <- cbind(social_m, clust1$cluster)
+```
+
+```{r echo=FALSE, }
+plotcluster(social_m[,2:32], clust1$cluster)
+```
+
+
+```{r,echo = FALSE}
+#cluster info to main data 
+social_clust1_main <- as.data.frame(cbind(clust1$center[1,]*sigma + mu, 
+                            clust1$center[2,]*sigma + mu,
+                            clust1$center[3,]*sigma + mu,
+                            clust1$center[4,]*sigma + mu,
+                            clust1$center[5,]*sigma + mu,
+                            clust1$center[6,]*sigma + mu,
+                            clust1$center[7,]*sigma + mu,
+                            clust1$center[8,]*sigma + mu,
+                            clust1$center[9,]*sigma + mu,
+                            clust1$center[10,]*sigma + mu))
+summary(social_clust1_main)
+#Change column names
+names(social_clust1_main) <- c('Cluster_1',
+                'Cluster_2',
+                'Cluster_3',
+                'Cluster_4',
+                'Cluster_5',
+                'Cluster_6',
+                'Cluster_7',
+                'Cluster_8',
+                'Cluster_9',
+                'Cluster_10')
+# Must remove spam since it is the lowest in all 
+# similarly chatter appears in all the cluster with high values
+```
+
+
+```{r out.width=c('50%', '50%'), fig.show='hold',echo = FALSE}
+#df1 <- melt(social_clust1_main,"row.names")
+social_clust1_main$type <- row.names(social_clust1_main)
+#Cluster 1
+ggplot(social_clust1_main, aes(x =reorder(type, -Cluster_1) , y=Cluster_1)) +
+  geom_bar(stat="identity", position ="dodge") + 
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle=-40, hjust=.1)) + 
+  labs(title="Cluster 1",
+        x ="Category", y = "Cluster centre values")
+#cluster 2 
+ggplot(social_clust1_main, aes(x =reorder(type, -Cluster_2) , y=Cluster_2)) +
+  geom_bar(stat="identity", position ="dodge") + 
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle=-40, hjust=.1)) + 
+  labs(title="Cluster 2",
+        x ="Category", y = "Cluster centre values")
+#Cluster 3
+ggplot(social_clust1_main, aes(x =reorder(type, -Cluster_3) , y=Cluster_3)) +
+  geom_bar(stat="identity", position ="dodge") + 
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle=-40, hjust=.1)) + 
+  labs(title="Cluster 3",
+        x ="Category", y = "Cluster centre values")
+#Cluster 4
+ggplot(social_clust1_main, aes(x =reorder(type, -Cluster_4) , y=Cluster_4)) +
+  geom_bar(stat="identity", position ="dodge") + 
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle=-40, hjust=.1)) + 
+  labs(title="Cluster 4",
+        x ="Category", y = "Cluster centre values")
+#cluster 5
+ggplot(social_clust1_main, aes(x =reorder(type, -Cluster_5) , y=Cluster_5)) +
+  geom_bar(stat="identity", position ="dodge") + 
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle=-40, hjust=.1)) + 
+  labs(title="Cluster 5",
+        x ="Category", y = "Cluster centre values")
+#cluster 6
+ggplot(social_clust1_main, aes(x =reorder(type, -Cluster_6) , y=Cluster_6)) +
+  geom_bar(stat="identity", position ="dodge") + 
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle=-40, hjust=.1)) + 
+  labs(title="Cluster 6",
+        x ="Category", y = "Cluster centre values")
+#Cluster 7
+ggplot(social_clust1_main, aes(x =reorder(type, -Cluster_7) , y=Cluster_7)) +
+  geom_bar(stat="identity", position ="dodge") + 
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle=-40, hjust=.1)) + 
+  labs(title="Cluster 7",
+        x ="Category", y = "Cluster centre values")
+#Cluster 8
+ggplot(social_clust1_main, aes(x =reorder(type, -Cluster_8) , y=Cluster_8)) +
+  geom_bar(stat="identity", position ="dodge") + 
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle=-40, hjust=.1)) + 
+  labs(title="Cluster 8",
+        x ="Category", y = "Cluster centre values")
+#Cluster 9
+ggplot(social_clust1_main, aes(x =reorder(type, -Cluster_9) , y=Cluster_9)) +
+  geom_bar(stat="identity", position ="dodge") + 
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle=-40, hjust=.1)) + 
+  labs(title="Cluster 9",
+        x ="Category", y = "Cluster centre values")
+#Cluster 10
+ggplot(social_clust1_main, aes(x =reorder(type, -Cluster_10) , y=Cluster_10)) +
+  geom_bar(stat="identity", position ="dodge") + 
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle=-40, hjust=.1)) + 
+  labs(title="Cluster 10",
+        x ="Category", y = "Cluster centre values") 
+#+xlab("Category") + ylab("Cluster centre values") + title("Cluster 1")
+ # scale_x_discrete(limits = Cluster_)
+
+```
+
+#### **Correlation plot**
+
+```{r, echo=FALSE, include=FALSE}
+library('corrplot')
+```
+
+```{r, echo=FALSE}
+cormat <- round(cor(social_m_raw[,2:37]), 2)
+corrplot(cormat, method="circle")
+```
+
+A lot variables are correlated to each other from the different clusters. An example can be seen online gaming and college university has a higher correlation and even personal fitness and health nutrition which makes sense that they are correlated. A possibility could be to use **PCA** to help create fewer uncorrelated variables. 
+
+The variables chatter, spam, adult were removed
+
+Continuing onto futher PCA Analysis
+
+#### **Principal Component Analysis**
+
+```{r, echo=FALSE, include=FALSE}
+social_m_raw$chatter<- NULL
+social_m_raw$spam <- NULL
+social_m_raw$adult <- NULL
+social_m_raw$photo_sharing <- NULL 
+social_m_raw$health_nutrition <- NULL 
+#################### PCA #########################
+pca_sm = prcomp(social_m_raw[,2:32], scale=TRUE, center = TRUE)
+summary(pca_sm)
+#plot(pca_sm, type= 'l')
+```
+
+
+```{r, echo=FALSE}
+pca_var <-  pca_sm$sdev ^ 2
+pca_var1 <- pca_var / sum(pca_var)
+#Cumulative sum of variation explained
+plot(cumsum(pca_var1), xlab = "Principal Component", 
+     ylab = "Fraction of variance explained")
+```
+
+```{r, echo=TRUE}
+cumsum(pca_var1)[10]
+```
+
+At 10th PC = 63.37% of the variation is explained. 
+
+Using Kaiser rule: https://docs.displayr.com/wiki/Kaiser_Rule
+
+Picked 10 PC to use for futher analysis.
+
+```{r, echo=FALSE, include=FALSE}
+varimax(pca_sm$rotation[, 1:11])$loadings
+```
+
+
+```{r, echo=FALSE}
+scores = pca_sm$x
+pc_data <- as.data.frame(scores[,1:18])
+X <- pc_data
+```
+
+#### **K-Means**
+
+```{r, echo=FALSE, include=FALSE}
+library(LICORS)
+```
+
+```{r, echo=FALSE}
+# Determine number of clusters
+#Elbow Method for finding the optimal number of clusters
+set.seed(12345)
+# Compute and plot wss for k = 2 to k = 15.
+k.max <- 15
+data <- X 
+wss <- sapply(1:k.max, 
+              function(k){kmeanspp(data, k, nstart=10,iter.max = 10 )$tot.withinss})
+plot(1:k.max, wss,
+     type="b", pch = 19, frame = FALSE, 
+     xlab="Number of clusters K",
+     ylab="Total within-clusters sum of squares")
+```
+
+The code chunk above takes a while to run.
+
+It is difficult to find the number of clusters from the plot as the within SS decreases with number of clusters. 
+
+We have decided to use a smaller number such as 5 cluster since it is easier to intrepret and identify market segments. Let's also look at the where our points are using 5 clusters. 
+
+```{r, echo=FALSE}
+# Run k-means with 5 clusters and 15 starts
+clust1 = kmeanspp(X, 5, nstart=15)
+#hard to visualized
+social_clust1 <- cbind(social_m, clust1$cluster)
+```
+
+
+```{r, echo=FALSE, include=FALSE}
+library(cluster)
+library(HSAUR)
+library(fpc)
+```
+
+#### **Cluster visualization**
+
+```{r, echo=FALSE, include=TRUE}
+plotcluster(social_m[,2:32], clust1$cluster)
+```
+
+Some of the separation of the clusters seem intuitive enough to make more sense of them and figure out what they represent in the analysis.
+
+
+```{r, echo=FALSE, include=FALSE}
+#cluster info to main data 
+social_clust1_main <- as.data.frame(cbind(clust1$center[1,]*sigma + mu, 
+                            clust1$center[2,]*sigma + mu,
+                            clust1$center[3,]*sigma + mu,
+                            clust1$center[4,]*sigma + mu,
+                            clust1$center[5,]*sigma + mu))
+summary(social_clust1_main)
+#Change column names
+names(social_clust1_main) <- c('Cluster_1',
+                'Cluster_2',
+                'Cluster_3',
+                'Cluster_4',
+                'Cluster_5')
+                #'Cluster_6')
+```
+
+#### **Results**
+
+```{r out.width=c('50%', '50%'), fig.show='hold', echo=FALSE}
+social_clust1_main$type <- row.names(social_clust1_main)
+#Cluster 1
+ggplot(social_clust1_main, aes(x =reorder(type, -Cluster_1) , y=Cluster_1)) +
+  geom_bar(stat="identity", position ="dodge") + 
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle=-40, hjust=.1)) + 
+  labs(title="Cluster 1",
+        x ="Category", y = "Cluster centre values") 
+#cluster 2 
+ggplot(social_clust1_main, aes(x =reorder(type, -Cluster_2) , y=Cluster_2)) +
+  geom_bar(stat="identity", position ="dodge") + 
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle=-40, hjust=.1)) + 
+  labs(title="Cluster 2",
+        x ="Category", y = "Cluster centre values")
+#Cluster 3
+ggplot(social_clust1_main, aes(x =reorder(type, -Cluster_3) , y=Cluster_3)) +
+  geom_bar(stat="identity", position ="dodge") + 
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle=-40, hjust=.1)) + 
+  labs(title="Cluster 3",
+        x ="Category", y = "Cluster centre values")
+#Cluster 4
+ggplot(social_clust1_main, aes(x =reorder(type, -Cluster_4) , y=Cluster_4)) +
+  geom_bar(stat="identity", position ="dodge") + 
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle=-40, hjust=.1)) + 
+  labs(title="Cluster 4",
+        x ="Category", y = "Cluster centre values")
+#cluster 5
+ggplot(social_clust1_main, aes(x =reorder(type, -Cluster_5) , y=Cluster_5)) +
+  geom_bar(stat="identity", position ="dodge") + 
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle=-40, hjust=.1)) + 
+  labs(title="Cluster 5",
+        x ="Category", y = "Cluster centre values")
+```
+
+
+Based on the K-Means clustering, we can identify distinct market segments that NutrientH20 can potentially leverage to design specific marketing campaigns. 
+
+
+Some of the **Market Segments** identified include:
+- Sports_Fandom, Travel, Outdoors
+- Small_Business, Current Events
+- Food, cooking, college_uni, Personal fitness
+- Cooking, Personal Fitness, Food, Shopping, Fashion
+- Travel, Outdoors, Business, cooking
+
+Different clusters include some of the same interests and some unique ones. A lot of the interets are known to be related to each other such as travel and outdoors, small business rely on current events that impact their lives. College students are focused on personal fitness which aslo is related to cooking and food. There are many more that are closely related.
+
+Market Segmentation allows us to find and target a defined audience while tracking what their interests are. Using the segmented insights companies can use the insights to derive resources towards areas that will lead to higher growth and more profits.
+
+The Market segments however are not always the same once identified as over time they should be updated to match the audience as the audience which consists of users is always moving in and out of different segments.
+
+#Question 5: Author Attribution
+
+First you have to import all of the libraries needed for testing different models and visualization (tidyverse, arules, arulesViz, igrpah, etc)
+```{r}
+library(tidyverse)
+library(arules)  # has a big ecosystem of packages built around it
+library(arulesViz)
+library(igraph) 
+```
+
+We read in the data using the reader plain fucntion.
+```{r}
+# Read in the data
+
+#Defining reader plain function 
+readerPlain = function(fname){
+				readPlain(elem=list(content=readLines(fname)), 
+							id=fname, language='en') }
+							
+```
+
+```{r}
+#Reading all folders
+train=Sys.glob('C:/Users/lucye/Downloads/UT MSBA/STA S380/Part 2/STA380/data/ReutersC50/C50train/*')
+```
+
+We read in all of the files for the training variables.
+
+We then create a null training dataset to store all of the strings from the files, attaching them to its respective author.
+```{r}
+#Creating training dataset
+comb_art=NULL
+labels=NULL
+for (name in train)
+{ 
+  author=substring(name,first=50)#first= ; ensure less than string length
+  article=Sys.glob(paste0(name,'/*.txt'))
+  comb_art=append(comb_art,article)
+  labels=append(labels,rep(author,length(article)))
+}
+```
+
+We also clean the file by combing through the lines and making the titles more readable by replacing the '.txt' part with the name of the file.
+```{r}
+#Cleaning the file names
+readerPlain <- function(fname)
+  {
+				readPlain(elem=list(content=readLines(fname)), 
+							id=fname, language='en') 
+  }
+comb = lapply(comb_art, readerPlain) 
+names(comb) = comb_art
+names(comb) = sub('.txt', '', names(comb))
+```
+Code takes a while to run
+
+```{r}
+corp_tr=Corpus(VectorSource(comb))
+```
+
+We then have to preprocess the data and tokenism it using the tm_map function, this allows us to convert all of the letters to lower case, remove numbers,punctuation, excess space, and stop words This leaves us with 3394 words and 2500 documents. We then come up with a summary statistic to see the amount of sparse terms then remove them from the data set. We then apply a term frequency weighting to measure the relative frequency of the occurrence of each word to the lenght of the documents. Then we put all of these as a matrix, and keep them as a measurement of term frequency and help us in identifying the author based on these patterns.
+```{r}
+#Pre-processing and tokenization using tm_map function:
+corp_tr_cp=corp_tr #copy of the corp_tr file
+corp_tr_cp = tm_map(corp_tr_cp, content_transformer(tolower)) #convert to lower case
+corp_tr_cp = tm_map(corp_tr_cp, content_transformer(removeNumbers)) #remove numbers
+corp_tr_cp = tm_map(corp_tr_cp, content_transformer(removePunctuation)) #remove punctuation
+corp_tr_cp = tm_map(corp_tr_cp, content_transformer(stripWhitespace)) #remove excess space
+corp_tr_cp = tm_map(corp_tr_cp, content_transformer(removeWords),stopwords("en")) #removing stopwords. Not exploring much on this, to avoid losing out on valuable information.
+DTM_train = DocumentTermMatrix(corp_tr_cp)
+DTM_train # some basic summary statistics
+#Removing sparse items
+DTM_tr=removeSparseTerms(DTM_train,.99)
+tf_idf_mat = weightTfIdf(DTM_tr)
+DTM_trr<-as.matrix(tf_idf_mat) #Matrix
+tf_idf_mat #3394 words, 2500 documents
+```
+
+Then, we have to repeat the same for the test directory by reading in all of the files in the test directory.
+```{r}
+test=Sys.glob('C:/Users/lucye/Downloads/UT MSBA/STA S380/Part 2/STA380/data/ReutersC50/C50test/*')
+```
+
+Creating and appending all of the words in the articles to the corresponding author.
+```{r}
+comb_art1=NULL
+labels1=NULL
+for (name in test)
+{ 
+  author1=substring(name,first=50)#first= ; ensure less than string length
+  article1=Sys.glob(paste0(name,'/*.txt'))
+  comb_art1=append(comb_art1,article1)
+  labels1=append(labels1,rep(author1,length(article1)))
+}
+```
+
+Cleaning the file names for the test set by substituting '.txt' by the name of the author as an easy identifier.
+```{r}
+#Cleaning the file names!!
+comb1 = lapply(comb_art1, readerPlain) 
+names(comb1) = comb_art1
+names(comb1) = sub('.txt', '', names(comb1))
+```
+Code takes a while to run
+
+Then, creating a mining corpus of the files.
+```{r}
+#Create a text mining corpus
+corp_ts=Corpus(VectorSource(comb1))
+```
+Then we have to tokenize the data again by converting all to lowercase, removing numbers, removing punctuation, white spaces, and stopwords to avoid losing out on valuable information.
+# Tokenization
+```{r}
+#Pre-processing and tokenization using tm_map function:
+corp_ts_cp=corp_ts #copy of the corp_tr file
+corp_ts_cp = tm_map(corp_ts_cp, content_transformer(tolower)) #convert to lower case
+corp_ts_cp = tm_map(corp_ts_cp, content_transformer(removeNumbers)) #remove numbers
+corp_ts_cp = tm_map(corp_ts_cp, content_transformer(removePunctuation)) #remove punctuation
+corp_ts_cp = tm_map(corp_ts_cp, content_transformer(stripWhitespace)) #remove excess space
+corp_ts_cp = tm_map(corp_ts_cp, content_transformer(removeWords),stopwords("en")) #removing stopwords. Not exploring much on this, to avoid losing out on valuable information. 
+```
+To validate that the preprocessing and tokenizing left us with the same amount of variables in test and train, we look at the column names from the train document and the TF matrix we created. this leaves us with 3394 words and 2500 documents.
+```{r}
+#Ensuring same number of variables in test and train by specifying column names from the train document term matrix
+DTM_ts=DocumentTermMatrix(corp_ts_cp,list(dictionary=colnames(DTM_tr)))
+tf_idf_mat_ts = weightTfIdf(DTM_ts)
+DTM_tss<-as.matrix(tf_idf_mat_ts) #Matrix
+tf_idf_mat_ts #3394 words, 2500 documents
+```
+
+# *Dimensionality reduction*
+
+We use PCE to take relevant features from this dataset to focus on the important variables as well as take away the effect multicolinnearity has on the dataset but still retaining the information from the relevant correlated variables.
+
+What we did here was to eliminate 0 entry columns and only use columns that correlated/intersected with each other, and extract the principal components for those columns.
+
+```{r}
+DTM_trr_1<-DTM_trr[,which(colSums(DTM_trr) != 0)] 
+DTM_tss_1<-DTM_tss[,which(colSums(DTM_tss) != 0)]
+
+DTM_tss_1 = DTM_tss_1[,intersect(colnames(DTM_tss_1),colnames(DTM_trr_1))]
+DTM_trr_1 = DTM_trr_1[,intersect(colnames(DTM_tss_1),colnames(DTM_trr_1))]
+
+
+```
+
+```{r}
+mod_pca = prcomp(DTM_trr_1,scale=TRUE)
+pred_pca=predict(mod_pca,newdata = DTM_tss_1)
+```
+Code takes a while to run
+
+```{r}
+#Until PC724 - 74.5, almost 75% of variance explained. Hence stopping at 724 out of 2500 principal components
+plot(mod_pca,type='line') 
+var <- apply(mod_pca$x, 2, var)  
+prop <- var / sum(var)
+#cumsum(prop)
+plot(cumsum(mod_pca$sdev^2/sum(mod_pca$sdev^2)))
+```
+
+
+From this, we choose the right amount of principal components that explain almost 75% of the variance. Here we choose PC724 out of the 2500 principal components.
+
+We then have to prepare the dataset so it can be classified. The classification procedures I have chosen to use is Random Forest, Naive Bayes, and KNN. Fitting a classifier like trees would be good to determine divides using features from the text. Naive Bayes was chosen because it is good at computing the probability that a new document falls into which class ('bag of words') and is class specific. KNN is good for measuring similarity in terms of distance measure and since we have the TF matrix (similar to cosine distance), this will be simpler (KNN often times gives us a high accuracy).
+
+We make sure that the dataset only contains the relevant features for classifying the documents to the author. We have to scale some of the data as well as convert it to a dataframe for easier access.
+
+```{r}
+tr_class = data.frame(mod_pca$x[,1:724])
+tr_class['author']=labels
+tr_load = mod_pca$rotation[,1:724]
+ts_class_pre <- scale(DTM_tss_1) %*% tr_load
+ts_class <- as.data.frame(ts_class_pre)
+ts_class['author']=labels1
+```
+
+##*(A) Random Forest Technique*
+
+We set a seed so we will get similar results each time. We then apply the random forest model to predict author from all files from the training dataset.
+
+```{r}
+library(randomForest)
+set.seed(1)
+mod_rand<-randomForest(as.factor(author)~.,data=tr_class, mtry=6,importance=TRUE)
+```
+Then we try to predict this on the test dataset and convert it to a table. We are able to compare these predictions to the actual results for the authors. Then we merge these two into a temporary variable to compare the differences or similarities, and compute the percentage correct that using random forests allowed us to achieve.
+
+```{r}
+pre_rand<-predict(mod_rand,data=ts_class)
+tab_rand<-as.data.frame(table(pre_rand,as.factor(ts_class$author)))
+predicted<-pre_rand
+actual<-as.factor(ts_class$author)
+temp<-as.data.frame(cbind(actual,predicted))
+temp$flag<-ifelse(temp$actual==temp$predicted,1,0)
+sum(temp$flag)
+sum(temp$flag)*100/nrow(temp)
+```
+
+1873 documents were classified with the right author giving an accuracy classification rate of 75%.
+
+##*(B) Naive Baye's*
+
+For Naive Baye's, we apply it to the training dataset and try to find the relationship between author and all of the documents. We then create a prediction variable using this model and the test set.
+
+```{r}
+library('e1071')
+mod_naive=naiveBayes(as.factor(author)~.,data=tr_class)
+pred_naive=predict(mod_naive,ts_class)
+```
+
+Using the predictions, we are able to compare it to the actual values for author. We again create and merge the two dataframes for actual and predictions to calculate the accuracy of Naive Bayes and how well it did on predicting the author based on a document.
+
+```{r}
+library(caret)
+predicted_nb=pred_naive
+actual_nb=as.factor(ts_class$author)
+temp_nb<-as.data.frame(cbind(actual_nb,predicted_nb))
+temp_nb$flag<-ifelse(temp_nb$actual_nb==temp_nb$predicted_nb,1,0)
+sum(temp_nb$flag)
+sum(temp_nb$flag)*100/nrow(temp_nb)
+```
+
+
+809 documents were classified with the right author giving us an accuracy classification rate of 32.36%
+
+```{r}
+pred_naive_tr=predict(mod_naive,tr_class)
+tr_err_naive_pre<-pred_naive
+```
+
+We then go on to compare the train vs test accuracy.
+
+##*KNN*
+
+For the KNN procedure, we take a subset from the training set and test set and factor it for author.
+We set a seed to just ensure we get smiliar results. We then apply the KNN to our subsets of test and training variables against the author.
+```{r}
+train.X = subset(tr_class, select = -c(author))
+test.X = subset(ts_class,select=-c(author))
+train.author=as.factor(tr_class$author)
+test.author=as.factor(ts_class$author)
+```
+
+```{r}
+library(class)
+set.seed(1)
+knn_pred=knn(train.X,test.X,train.author,k=1)
+```
+
+Then to caluclate the accuracy of the prediction model on the test set, we ssee if the knn classification for prediction matches the test set author value and calculate the accuracy.
+
+```{r}
+temp_knn=as.data.frame(cbind(knn_pred,test.author))
+temp_knn_flag<-ifelse(as.integer(knn_pred)==as.integer(test.author),1,0)
+sum(temp_knn_flag)
+sum(temp_knn_flag)*100/nrow(temp_knn) #802
+```
+
+844 documents were classified with the right author giving us an accuracy classification rate of 33.76%
+
+```{r}
+library(ggplot2)
+comp<-data.frame("Model"=c("Random Forest","Naive Baye's","KNN"), "Test.accuracy"=c(74.9,32.4,32.08))
+comp
+ggplot(comp,aes(x=Model,y=Test.accuracy))+geom_col()
+```
+Comparing the 3 different classification techniques (KNN, random forest, Naive bayes) we can see that random forest has the highest accuracy by for for testing. The KNN had an accuracy of only 32.08, Naive Baye's had an accuracy of only 32.40, while Random Forest had a test accuracy for 74.90%. Therefore Random Forest is the best model predictor for this dataset for predicting the author of an article on the basis of that article's textual context.
+
+#Question 6: Association Rule Mining
+
+
+```{r echo=FALSE, include=FALSE}
+## Load the required packages
+library(tidyverse)
+library(arules) 
+library(arulesViz)
+```
+
+
+#### Presenting the structure of the raw dataset:
+
+```{r echo=FALSE}
+## Read in the dataset and explore the structure
+setwd("/Users/siddchauhan/Documents/PROJECTS/UT MSBA/Stats bootcamp Files/Predictive Modeling/Predic Mod II Half/")
+groceries_raw = scan("groceries.txt", what = "", sep = "\n")
+head(groceries_raw)
+```
+
+```{r echo=FALSE, include=TRUE}
+str(groceries_raw)
+summary(groceries_raw)
+```
+
+We transform the data into a "transactions" class before applying the apriori algorithm. We are doing this as it is required by the apriori algorithm.
+
+
+summary of the dataset:
+1. There are total of 9835 transactions in our dataset
+2. Whole milk is the present in 2513 baskets and is the most frequently bought item
+3. More than half of the transactions have 4 or lesser items per basket
+
+```{r echo=FALSE, include=TRUE}
+## Process the data and cast it as a "transactions" class
+groceries = strsplit(groceries_raw, ",")
+groc_trans = as(groceries, "transactions")
+summary(groc_trans)
+```
+
+```{r echo=FALSE}
+itemFrequencyPlot(groc_trans, topN = 20) #to see which item was the most common and plotting by the top 20
+```
+
+#### **Let's explore rules with support > 0.05, confidence > 0.1 and length <= 2 using the 'apriori' algorithm**
+
+Support is measured by summing up the number of transactions of both "A" and "B" and dividing by the total number of transactions
+
+Confidence is measured by summing up the number of transactions with both "A" and "B" and dividing by the total number of transactions with "A"
+
+To get strong rulese increase the value of the 'conf' parameter and to get longer rules we increaes the 'maxlen' parameter.
+
+There are only 6 rules generated because of the high support and low confidence level. We also notice that most relationships in this item set include whole milk, yogurt and rolls/buns which is in accordance with the transaction frequency plot we saw earlier. These are some of the most frequently bought items.
+
+```{r echo=FALSE, include=FALSE}
+groc_rules_1 = apriori(groc_trans, 
+                     parameter=list(support=0.05, confidence=.1, minlen=2))
+```
+
+```{r echo=FALSE}
+arules::inspect(groc_rules_1)
+plot(groc_rules_1, method='graph')
+```
+
+#### **Let's decrease support further and increase confidence slightly with support > 0.02, confidence > 0.2 and length <= 2**
+
+This item set contains 72 rules and includes a lot more items. However, whole milk still seems to be a common occurence.
+
+```{r echo=FALSE, include=FALSE}
+groc_rules_2 = apriori(groc_trans, 
+                     parameter=list(support=0.02, confidence=.2, minlen=2))
+arules::inspect(groc_rules_2)
+```
+
+```{r echo=FALSE}
+plot(head(groc_rules_2,15,by='lift'), method='graph')
+```
+
+
+#### **Let us increase the confidence level and decrease the support further. Let's explore rules with support > 0.0015, confidence > 0.8 and length <= 2**
+
+
+```{r echo=FALSE, include=FALSE}
+groc_rules_3 = apriori(groc_trans, 
+                     parameter=list(support=0.0015, confidence=0.8, minlen=2))
+arules::inspect(groc_rules_3)
+```
+
+```{r echo=FALSE}
+plot(head(groc_rules_3, 10, by='lift'), method='graph')
+```
+
+Lift=ConfidenceExpected Confidence=P(A∩B)P(A).P(B).
+Lift is the factor by which, the co-occurrence of A and B exceeds the expected probability of A and B co-occurring, had they been independent. So, higher the lift, higher the chance of A and B occurring together.The information to explain the concept has been take via http://r-statistics.co/Association-Mining-With-R.html
+
+**Summary**
+
+Association mining is commonly used for making product recommendations. This is done so by recommending products that are commonly bought together. However, in practical situations this is 100$% accurate and sometimes rules can give misleading results.
+
+From the grocery.txt dataset, we can make some observations. If a person buys red or blush wine then they may also end up buying beer. This also holds for people that buy liquor. A different observation includes that people are more likely to buy vegetables if they are already buying fruit or vegetable based juice. There is also a commonalty in buying meat which is commonly bought with association to vegetables and it leads to other associations. One very easy observation to note was that whole milk was the most common item purchased by buyers. The different associations from the model are indicative of what happens in a practical grocery shopping scenario as people tend to shop for all these type of items.

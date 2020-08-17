@@ -1,0 +1,196 @@
+---
+title: "Flight"
+author: "Eliesha Lai"
+date: "2020/8/16"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Read Data
+
+```{r warning=FALSE, message=FALSE,results='hide'}
+ABIA<- read.csv("https://raw.githubusercontent.com/jgscott/STA380/master/data/ABIA.csv")
+View(ABIA)
+dim(ABIA)
+str(ABIA)
+```
+
+# Check the correlation between each variables
+
+```{r,message=FALSE,warning=FALSE}
+library("GGally")
+# ggcorr(): Plot a correlation matrix
+ggcorr(data = ABIA, palette = "RdYlGn",
+       label = TRUE, label_color = "black")
+```
+Carrier Delay and LateAircraf Delay with the 0.6 seem to be more correlated with Departure Delay and Arrival Delay than any other kinds of delay, why?
+
+```{r,message=FALSE,warning=FALSE}
+library(magrittr)  
+library(dplyr) 
+new=ABIA %>% replace(is.na(.), 0)
+colMeans(new['CarrierDelay'])
+colMeans(new['WeatherDelay'])
+colMeans(new['NASDelay'])
+colMeans(new['SecurityDelay'])
+colMeans(new['LateAircraftDelay'])
+```
+When we looked at the average delay minutes of each type, we noticed that LateAircraftDelay and CarrierDelay postpone more time.
+Whatever cause these two types of delay might require more time to deal with. That's why they are high correlated to DepDelay amd ArrDelay.
+
+--------------------------------
+
+#What is the most common reason of delay
+
+```{r,warning=FALSE}
+new=ABIA %>% replace(is.na(.), 0)
+a=colSums(new != 0)
+a['CarrierDelay']
+a['WeatherDelay']
+a['NASDelay']
+a['SecurityDelay']
+a['LateAircraftDelay']
+```
+The most common reason of delay is actually NASDelay. NAS Delay refers to all airport operations, heavy traffic volume, and flight delays caused by aviation management. By comparison
+it can probably be solved in a short time.
+
+#The most common reason of cancellation
+
+```{r,warning=FALSE}
+cancel=dplyr::count(ABIA, CancellationCode, sort = TRUE)
+#(A = carrier, B = weather, C = NAS, D = security)
+cancel
+```
+According to the count of cacellation code, Carrier Delay is the most common reason.The fligts delay  due to reasons such as emergency maintenance of the aircraft, crew deployment, baggage storage, and aircraft filling in fuel.
+
+So suprised the most common reason of delay was not weather.
+
+---------------------------------------------
+
+## Basic information about flights
+
+# Flights each month
+
+```{r}
+
+hist(x=ABIA$Month, 
+     main="Flights each Month",         
+     xlab="Month",                      
+     ylab="Frequency") 
+
+```
+More flights during summer, probably because of the summer vacation. (May~July)
+
+#Flights each weekdays
+```{r,message=FALSE}
+week <- group_by(ABIA, DayOfWeek)
+count <- summarise(week,count = n())
+count
+hist(x=ABIA$DayOfWeek, 
+     main="Flights each week day",         
+     xlab="week",                      
+     ylab="Frequency") 
+```
+More flights on wednesday.
+
+#Flights to Austin
+
+```{r}
+to_austin=ABIA[ABIA$Dest == 'AUS',]
+dplyr::count(to_austin, Origin, sort = TRUE)
+```
+
+
+
+![Flights to Austin](https://raw.githubusercontent.com/AmberCXX/STA_380_part2_exercise/master/map.jpg)
+
+Top three numbers of flights are from two Dallas airports and Houston. 
+
+
+# fly from Austin
+```{r}
+away_austin=ABIA[ABIA$Origin == 'AUS',]
+dplyr::count(away_austin, Dest, sort = TRUE)
+```
+Top three for flghts fly from Austin remain the same.
+
+
+```{r}
+densityplot( ~ Distance ,      
+             data=ABIA
+)
+```
+Mostly are short distance flghts less than 500 miles
+
+
+```{r}
+boxplot(formula = AirTime ~ UniqueCarrier,  
+        data = ABIA,       
+        xlab = "Carriers code",          
+        ylab = "Airtime(min)",    
+        col ="blue")       
+
+```
+B6 is JetBlue. This carrier seems to fly logner air time in minutes. Is it because its destinations tend to be farer?
+
+```{r}
+
+b=summarise(group_by(new, UniqueCarrier), count(UniqueCarrier))
+
+b
+```
+
+
+
+# Average miles of each carriers
+```{r}
+
+c=summarise(group_by(new, UniqueCarrier), sum(Distance))
+c
+```
+
+```{r}
+m=merge(c, b, by.x="UniqueCarrier", by.y="UniqueCarrier")
+m['frac']=m['sum(Distance)']/m['count(UniqueCarrier)']
+m
+```
+JetBlue tends to fly longer distances. So its total Air time is longest among all carriers.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

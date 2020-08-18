@@ -3077,7 +3077,7 @@ Code takes a while to run
 plot(mod_pca,type='line') 
 ```
 
-![](q5-knit_files/figure-markdown_github/unnamed-chunk-16-1.png)
+![](Raw%20RMD/FinalSubmission_files/figure-markdown_github/q5_1.png)
 
 ``` r
 var <- apply(mod_pca$x, 2, var)  
@@ -3086,7 +3086,7 @@ prop <- var / sum(var)
 plot(cumsum(mod_pca$sdev^2/sum(mod_pca$sdev^2)))
 ```
 
-![](q5-knit_files/figure-markdown_github/unnamed-chunk-16-2.png)
+![](Raw%20RMD/FinalSubmission_files/figure-markdown_github/q5_2.png)
 
 From this, we choose the right amount of principal components that
 explain almost 75% of the variance. Here we choose PC724 out of the 2500
@@ -3272,7 +3272,7 @@ comp
 ggplot(comp,aes(x=Model,y=Test.accuracy))+geom_col()
 ```
 
-![](q5-knit_files/figure-markdown_github/unnamed-chunk-26-1.png)
+![](Raw%20RMD/FinalSubmission_files/figure-markdown_github/q5_3.png)
 Comparing the 3 different classification techniques (KNN, random forest,
 Naive bayes) we can see that random forest has the highest accuracy by
 for for testing. The KNN had an accuracy of only 32.08, Naive Baye’s had

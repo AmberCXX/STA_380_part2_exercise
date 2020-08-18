@@ -2692,6 +2692,596 @@ over time they should be updated to match the audience as the audience
 which consists of users is always moving in and out of different
 segments.
 
+\#Question 5: Author Attribution
+
+First you have to import all of the libraries needed for testing
+different models and visualization (tidyverse, arules, arulesViz,
+igrpah, etc)
+
+``` r
+library(tm) 
+```
+
+    ## Loading required package: NLP
+
+``` r
+library(magrittr)
+library(slam)
+library(proxy)
+```
+
+    ## 
+    ## Attaching package: 'proxy'
+
+    ## The following objects are masked from 'package:stats':
+    ## 
+    ##     as.dist, dist
+
+    ## The following object is masked from 'package:base':
+    ## 
+    ##     as.matrix
+
+``` r
+library(caret)
+```
+
+    ## Loading required package: lattice
+
+    ## Loading required package: ggplot2
+
+    ## 
+    ## Attaching package: 'ggplot2'
+
+    ## The following object is masked from 'package:NLP':
+    ## 
+    ##     annotate
+
+``` r
+library(plyr)
+library(dplyr)
+```
+
+    ## 
+    ## Attaching package: 'dplyr'
+
+    ## The following objects are masked from 'package:plyr':
+    ## 
+    ##     arrange, count, desc, failwith, id, mutate, rename, summarise,
+    ##     summarize
+
+    ## The following objects are masked from 'package:stats':
+    ## 
+    ##     filter, lag
+
+    ## The following objects are masked from 'package:base':
+    ## 
+    ##     intersect, setdiff, setequal, union
+
+``` r
+library(ggplot2)
+library('e1071')
+```
+
+We read in the data using the reader plain function.
+
+``` r
+# Read in the data
+
+#Defining reader plain function 
+readerPlain = function(fname){
+                readPlain(elem=list(content=readLines(fname)), 
+                            id=fname, language='en') }
+```
+
+``` r
+#Reading all folders
+train=Sys.glob('C:/Users/lucye/Downloads/UT MSBA/STA S380/Part 2/STA380/data/ReutersC50/C50train/*')
+```
+
+We read in all of the files for the training variables.
+
+We then create a null training dataset to store all of the strings from
+the files, attaching them to its respective author.
+
+``` r
+#Creating training dataset
+comb_art=NULL
+labels=NULL
+for (name in train)
+{ 
+  author=substring(name,first=50)#first= ; ensure less than string length
+  article=Sys.glob(paste0(name,'/*.txt'))
+  comb_art=append(comb_art,article)
+  labels=append(labels,rep(author,length(article)))
+}
+```
+
+We also clean the file by combing through the lines and making the
+titles more readable by replacing the ‘.txt’ part with the name of the
+file.
+
+``` r
+#Cleaning the file names
+readerPlain <- function(fname)
+  {
+                readPlain(elem=list(content=readLines(fname)), 
+                            id=fname, language='en') 
+  }
+comb = lapply(comb_art, readerPlain) 
+names(comb) = comb_art
+names(comb) = sub('.txt', '', names(comb))
+```
+
+Code takes a while to run
+
+``` r
+corp_tr=Corpus(VectorSource(comb))
+```
+
+We then have to preprocess the data and tokenism it using the tm\_map
+function, this allows us to convert all of the letters to lower case,
+remove numbers,punctuation, excess space, and stop words This leaves us
+with 3394 words and 2500 documents. We then come up with a summary
+statistic to see the amount of sparse terms then remove them from the
+data set. We then apply a term frequency weighting to measure the
+relative frequency of the occurrence of each word to the lenght of the
+documents. Then we put all of these as a matrix, and keep them as a
+measurement of term frequency and help us in identifying the author
+based on these patterns.
+
+``` r
+#Pre-processing and tokenization using tm_map function:
+corp_tr_cp=corp_tr #copy of the corp_tr file
+corp_tr_cp = tm_map(corp_tr_cp, content_transformer(tolower)) #convert to lower case
+```
+
+    ## Warning in tm_map.SimpleCorpus(corp_tr_cp, content_transformer(tolower)):
+    ## transformation drops documents
+
+``` r
+corp_tr_cp = tm_map(corp_tr_cp, content_transformer(removeNumbers)) #remove numbers
+```
+
+    ## Warning in tm_map.SimpleCorpus(corp_tr_cp, content_transformer(removeNumbers)):
+    ## transformation drops documents
+
+``` r
+corp_tr_cp = tm_map(corp_tr_cp, content_transformer(removePunctuation)) #remove punctuation
+```
+
+    ## Warning in tm_map.SimpleCorpus(corp_tr_cp,
+    ## content_transformer(removePunctuation)): transformation drops documents
+
+``` r
+corp_tr_cp = tm_map(corp_tr_cp, content_transformer(stripWhitespace)) #remove excess space
+```
+
+    ## Warning in tm_map.SimpleCorpus(corp_tr_cp,
+    ## content_transformer(stripWhitespace)): transformation drops documents
+
+``` r
+corp_tr_cp = tm_map(corp_tr_cp, content_transformer(removeWords),stopwords("en")) #removing stopwords. Not exploring much on this, to avoid losing out on valuable information.
+```
+
+    ## Warning in tm_map.SimpleCorpus(corp_tr_cp, content_transformer(removeWords), :
+    ## transformation drops documents
+
+``` r
+DTM_train = DocumentTermMatrix(corp_tr_cp)
+DTM_train # some basic summary statistics
+```
+
+    ## <<DocumentTermMatrix (documents: 2500, terms: 32573)>>
+    ## Non-/sparse entries: 545361/80887139
+    ## Sparsity           : 99%
+    ## Maximal term length: 47
+    ## Weighting          : term frequency (tf)
+
+``` r
+#Removing sparse items
+DTM_tr=removeSparseTerms(DTM_train,.99)
+tf_idf_mat = weightTfIdf(DTM_tr)
+DTM_trr<-as.matrix(tf_idf_mat) #Matrix
+tf_idf_mat #3394 words, 2500 documents
+```
+
+    ## <<DocumentTermMatrix (documents: 2500, terms: 3396)>>
+    ## Non-/sparse entries: 382971/8107029
+    ## Sparsity           : 95%
+    ## Maximal term length: 47
+    ## Weighting          : term frequency - inverse document frequency (normalized) (tf-idf)
+
+Then, we have to repeat the same for the test directory by reading in
+all of the files in the test directory.
+
+``` r
+test=Sys.glob('C:/Users/lucye/Downloads/UT MSBA/STA S380/Part 2/STA380/data/ReutersC50/C50test/*')
+```
+
+Creating and appending all of the words in the articles to the
+corresponding author.
+
+``` r
+comb_art1=NULL
+labels1=NULL
+for (name in test)
+{ 
+  author1=substring(name,first=50)#first= ; ensure less than string length
+  article1=Sys.glob(paste0(name,'/*.txt'))
+  comb_art1=append(comb_art1,article1)
+  labels1=append(labels1,rep(author1,length(article1)))
+}
+```
+
+Cleaning the file names for the test set by substituting ‘.txt’ by the
+name of the author as an easy identifier.
+
+``` r
+#Cleaning the file names!!
+comb1 = lapply(comb_art1, readerPlain) 
+names(comb1) = comb_art1
+names(comb1) = sub('.txt', '', names(comb1))
+```
+
+Code takes a while to run
+
+Then, creating a mining corpus of the files.
+
+``` r
+#Create a text mining corpus
+corp_ts=Corpus(VectorSource(comb1))
+```
+
+Then we have to tokenize the data again by converting all to lowercase,
+removing numbers, removing punctuation, white spaces, and stopwords to
+avoid losing out on valuable information. \# Tokenization
+
+``` r
+#Pre-processing and tokenization using tm_map function:
+corp_ts_cp=corp_ts #copy of the corp_tr file
+corp_ts_cp = tm_map(corp_ts_cp, content_transformer(tolower)) #convert to lower case
+```
+
+    ## Warning in tm_map.SimpleCorpus(corp_ts_cp, content_transformer(tolower)):
+    ## transformation drops documents
+
+``` r
+corp_ts_cp = tm_map(corp_ts_cp, content_transformer(removeNumbers)) #remove numbers
+```
+
+    ## Warning in tm_map.SimpleCorpus(corp_ts_cp, content_transformer(removeNumbers)):
+    ## transformation drops documents
+
+``` r
+corp_ts_cp = tm_map(corp_ts_cp, content_transformer(removePunctuation)) #remove punctuation
+```
+
+    ## Warning in tm_map.SimpleCorpus(corp_ts_cp,
+    ## content_transformer(removePunctuation)): transformation drops documents
+
+``` r
+corp_ts_cp = tm_map(corp_ts_cp, content_transformer(stripWhitespace)) #remove excess space
+```
+
+    ## Warning in tm_map.SimpleCorpus(corp_ts_cp,
+    ## content_transformer(stripWhitespace)): transformation drops documents
+
+``` r
+corp_ts_cp = tm_map(corp_ts_cp, content_transformer(removeWords),stopwords("en")) #removing stopwords. Not exploring much on this, to avoid losing out on valuable information. 
+```
+
+    ## Warning in tm_map.SimpleCorpus(corp_ts_cp, content_transformer(removeWords), :
+    ## transformation drops documents
+
+To validate that the preprocessing and tokenizing left us with the same
+amount of variables in test and train, we look at the column names from
+the train document and the TF matrix we created. this leaves us with
+3394 words and 2500 documents.
+
+``` r
+#Ensuring same number of variables in test and train by specifying column names from the train document term matrix
+DTM_ts=DocumentTermMatrix(corp_ts_cp,list(dictionary=colnames(DTM_tr)))
+tf_idf_mat_ts = weightTfIdf(DTM_ts)
+```
+
+    ## Warning in weightTfIdf(DTM_ts): unreferenced
+    ## term(s): stadatareuterscctrainaaronpressmannewsmltxt
+    ## stadatareuterscctrainalancrosbynewsmltxt
+    ## stadatareuterscctrainalexandersmithnewsmltxt
+    ## stadatareuterscctrainbenjaminkanglimnewsmltxt
+    ## stadatareuterscctrainbernardhickeynewsmltxt
+    ## stadatareuterscctrainbraddorfmannewsmltxt
+    ## stadatareuterscctraindarrenschuettlernewsmltxt
+    ## stadatareuterscctraindavidlawdernewsmltxt
+    ## stadatareuterscctrainednafernandesnewsmltxt
+    ## stadatareuterscctrainericauchardnewsmltxt
+    ## stadatareuterscctrainfumikofujisakinewsmltxt
+    ## stadatareuterscctraingrahamearnshawnewsmltxt
+    ## stadatareuterscctrainheatherscoffieldnewsmltxt
+    ## stadatareuterscctrainjanlopatkanewsmltxt
+    ## stadatareuterscctrainjanemacartneynewsmltxt
+    ## stadatareuterscctrainjimgilchristnewsmltxt
+    ## stadatareuterscctrainjowinterbottomnewsmltxt
+    ## stadatareuterscctrainjoeortiznewsmltxt
+    ## stadatareuterscctrainjohnmastrininewsmltxt
+    ## stadatareuterscctrainjonathanbirtnewsmltxt
+    ## stadatareuterscctrainkarlpenhaulnewsmltxt
+    ## stadatareuterscctrainkeithweirnewsmltxt
+    ## stadatareuterscctrainkevindrawbaughnewsmltxt
+    ## stadatareuterscctrainkevinmorrisonnewsmltxt
+    ## stadatareuterscctrainkirstinridleynewsmltxt
+    ## stadatareuterscctrainkouroshkarimkhanynewsmltxt
+    ## stadatareuterscctrainlydiazajcnewsmltxt
+    ## stadatareuterscctrainlynneodonnellnewsmltxt
+    ## stadatareuterscctrainlynnleybrowningnewsmltxt
+    ## stadatareuterscctrainmarcelmichelsonnewsmltxt
+    ## stadatareuterscctrainmarkbendeichnewsmltxt
+    ## stadatareuterscctrainmartinwolknewsmltxt
+    ## stadatareuterscctrainmatthewbuncenewsmltxt
+    ## stadatareuterscctrainmichaelconnornewsmltxt
+    ## stadatareuterscctrainmuredickienewsmltxt stadatareuterscctrainnicklouthnewsmltxt
+    ## stadatareuterscctrainpatriciacomminsnewsmltxt
+    ## stadatareuterscctrainpeterhumphreynewsmltxt
+    ## stadatareuterscctrainpierretrannewsmltxt
+    ## stadatareuterscctrainrobinsidelnewsmltxt
+    ## stadatareuterscctrainrogerfillionnewsmltxt
+    ## stadatareuterscctrainsamuelperrynewsmltxt
+    ## stadatareuterscctrainsarahdavisonnewsmltxt
+    ## stadatareuterscctrainscotthillisnewsmltxt
+    ## stadatareuterscctrainsimoncowellnewsmltxt stadatareuterscctraintaneelynnewsmltxt
+    ## stadatareuterscctraintheresepolettinewsmltxt
+    ## stadatareuterscctraintimfarrandnewsmltxt
+    ## stadatareuterscctraintoddnissennewsmltxt
+    ## stadatareuterscctrainwilliamkazernewsmltxt
+
+``` r
+DTM_tss<-as.matrix(tf_idf_mat_ts) #Matrix
+tf_idf_mat_ts #3394 words, 2500 documents
+```
+
+    ## <<DocumentTermMatrix (documents: 2500, terms: 3396)>>
+    ## Non-/sparse entries: 379314/8110686
+    ## Sparsity           : 96%
+    ## Maximal term length: 47
+    ## Weighting          : term frequency - inverse document frequency (normalized) (tf-idf)
+
+*Dimensionality reduction*
+==========================
+
+We use PCE to take relevant features from this dataset to focus on the
+important variables as well as take away the effect multicolinnearity
+has on the dataset but still retaining the information from the relevant
+correlated variables.
+
+What we did here was to eliminate 0 entry columns and only use columns
+that correlated/intersected with each other, and extract the principal
+components for those columns.
+
+``` r
+DTM_trr_1<-DTM_trr[,which(colSums(DTM_trr) != 0)] 
+DTM_tss_1<-DTM_tss[,which(colSums(DTM_tss) != 0)]
+
+DTM_tss_1 = DTM_tss_1[,intersect(colnames(DTM_tss_1),colnames(DTM_trr_1))]
+DTM_trr_1 = DTM_trr_1[,intersect(colnames(DTM_tss_1),colnames(DTM_trr_1))]
+```
+
+``` r
+mod_pca = prcomp(DTM_trr_1,scale=TRUE)
+pred_pca=predict(mod_pca,newdata = DTM_tss_1)
+```
+
+Code takes a while to run
+
+``` r
+#Until PC724 - 74.5, almost 75% of variance explained. Hence stopping at 724 out of 2500 principal components
+plot(mod_pca,type='line') 
+```
+
+![](q5-knit_files/figure-markdown_github/unnamed-chunk-16-1.png)
+
+``` r
+var <- apply(mod_pca$x, 2, var)  
+prop <- var / sum(var)
+#cumsum(prop)
+plot(cumsum(mod_pca$sdev^2/sum(mod_pca$sdev^2)))
+```
+
+![](q5-knit_files/figure-markdown_github/unnamed-chunk-16-2.png)
+
+From this, we choose the right amount of principal components that
+explain almost 75% of the variance. Here we choose PC724 out of the 2500
+principal components.
+
+We then have to prepare the dataset so it can be classified. The
+classification procedures I have chosen to use is Random Forest, Naive
+Bayes, and KNN. Fitting a classifier like trees would be good to
+determine divides using features from the text. Naive Bayes was chosen
+because it is good at computing the probability that a new document
+falls into which class (‘bag of words’) and is class specific. KNN is
+good for measuring similarity in terms of distance measure and since we
+have the TF matrix (similar to cosine distance), this will be simpler
+(KNN often times gives us a high accuracy).
+
+We make sure that the dataset only contains the relevant features for
+classifying the documents to the author. We have to scale some of the
+data as well as convert it to a dataframe for easier access.
+
+``` r
+tr_class = data.frame(mod_pca$x[,1:724])
+tr_class['author']=labels
+tr_load = mod_pca$rotation[,1:724]
+ts_class_pre <- scale(DTM_tss_1) %*% tr_load
+ts_class <- as.data.frame(ts_class_pre)
+ts_class['author']=labels1
+```
+
+\#\#*(A) Random Forest Technique*
+
+We set a seed so we will get similar results each time. We then apply
+the random forest model to predict author from all files from the
+training dataset.
+
+``` r
+library(randomForest)
+```
+
+    ## randomForest 4.6-14
+
+    ## Type rfNews() to see new features/changes/bug fixes.
+
+    ## 
+    ## Attaching package: 'randomForest'
+
+    ## The following object is masked from 'package:dplyr':
+    ## 
+    ##     combine
+
+    ## The following object is masked from 'package:ggplot2':
+    ## 
+    ##     margin
+
+``` r
+set.seed(1)
+mod_rand<-randomForest(as.factor(author)~.,data=tr_class, mtry=6,importance=TRUE)
+```
+
+Then we try to predict this on the test dataset and convert it to a
+table. We are able to compare these predictions to the actual results
+for the authors. Then we merge these two into a temporary variable to
+compare the differences or similarities, and compute the percentage
+correct that using random forests allowed us to achieve.
+
+``` r
+pre_rand<-predict(mod_rand,data=ts_class)
+tab_rand<-as.data.frame(table(pre_rand,as.factor(ts_class$author)))
+predicted<-pre_rand
+actual<-as.factor(ts_class$author)
+temp<-as.data.frame(cbind(actual,predicted))
+temp$flag<-ifelse(temp$actual==temp$predicted,1,0)
+sum(temp$flag)
+```
+
+    ## [1] 1875
+
+``` r
+sum(temp$flag)*100/nrow(temp)
+```
+
+    ## [1] 75
+
+1873 documents were classified with the right author giving an accuracy
+classification rate of 75%.
+
+\#\#*(B) Naive Baye’s*
+
+For Naive Baye’s, we apply it to the training dataset and try to find
+the relationship between author and all of the documents. We then create
+a prediction variable using this model and the test set.
+
+``` r
+library('e1071')
+mod_naive=naiveBayes(as.factor(author)~.,data=tr_class)
+pred_naive=predict(mod_naive,ts_class)
+```
+
+Using the predictions, we are able to compare it to the actual values
+for author. We again create and merge the two dataframes for actual and
+predictions to calculate the accuracy of Naive Bayes and how well it did
+on predicting the author based on a document.
+
+``` r
+library(caret)
+predicted_nb=pred_naive
+actual_nb=as.factor(ts_class$author)
+temp_nb<-as.data.frame(cbind(actual_nb,predicted_nb))
+temp_nb$flag<-ifelse(temp_nb$actual_nb==temp_nb$predicted_nb,1,0)
+sum(temp_nb$flag)
+```
+
+    ## [1] 809
+
+``` r
+sum(temp_nb$flag)*100/nrow(temp_nb)
+```
+
+    ## [1] 32.36
+
+809 documents were classified with the right author giving us an
+accuracy classification rate of 32.36%
+
+``` r
+pred_naive_tr=predict(mod_naive,tr_class)
+tr_err_naive_pre<-pred_naive
+```
+
+We then go on to compare the train vs test accuracy.
+
+\#\#*KNN*
+
+For the KNN procedure, we take a subset from the training set and test
+set and factor it for author. We set a seed to just ensure we get
+smiliar results. We then apply the KNN to our subsets of test and
+training variables against the author.
+
+``` r
+train.X = subset(tr_class, select = -c(author))
+test.X = subset(ts_class,select=-c(author))
+train.author=as.factor(tr_class$author)
+test.author=as.factor(ts_class$author)
+```
+
+``` r
+library(class)
+set.seed(1)
+knn_pred=knn(train.X,test.X,train.author,k=1)
+```
+
+Then to caluclate the accuracy of the prediction model on the test set,
+we ssee if the knn classification for prediction matches the test set
+author value and calculate the accuracy.
+
+``` r
+temp_knn=as.data.frame(cbind(knn_pred,test.author))
+temp_knn_flag<-ifelse(as.integer(knn_pred)==as.integer(test.author),1,0)
+sum(temp_knn_flag)
+```
+
+    ## [1] 844
+
+``` r
+sum(temp_knn_flag)*100/nrow(temp_knn) #802
+```
+
+    ## [1] 33.76
+
+844 documents were classified with the right author giving us an
+accuracy classification rate of 33.76%
+
+``` r
+library(ggplot2)
+comp<-data.frame("Model"=c("Random Forest","Naive Baye's","KNN"), "Test.accuracy"=c(75,32.36,33.76))
+comp
+```
+
+    ##           Model Test.accuracy
+    ## 1 Random Forest         75.00
+    ## 2  Naive Baye's         32.36
+    ## 3           KNN         33.76
+
+``` r
+ggplot(comp,aes(x=Model,y=Test.accuracy))+geom_col()
+```
+
+![](q5-knit_files/figure-markdown_github/unnamed-chunk-26-1.png)
+Comparing the 3 different classification techniques (KNN, random forest,
+Naive bayes) we can see that random forest has the highest accuracy by
+for for testing. The KNN had an accuracy of only 32.08, Naive Baye’s had
+an accuracy of only 32.40, while Random Forest had a test accuracy for
+74.90%. Therefore Random Forest is the best model predictor for this
+dataset for predicting the author of an article on the basis of that
+article’s textual context.
+
+
 \#Question 6: Association Rule Mining
 
 #### Presenting the structure of the raw dataset:

@@ -479,13 +479,11 @@ B6 is JetBlue. This carrier seems to fly logner air time in minutes. Is it becau
 ```{r}
 
 b=summarise(group_by(new, UniqueCarrier), count(UniqueCarrier))
-
 b
 ```
 
 ##Average miles of each carriers
 ```{r}
-
 c=summarise(group_by(new, UniqueCarrier), sum(Distance))
 c
 ```

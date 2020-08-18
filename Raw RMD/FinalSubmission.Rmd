@@ -1,21 +1,22 @@
 ---
 title: "Final"
-output: html_document
+output: 
+  md_document:
+    variant: markdown_github
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(mosaic)
+library(tidyverse)
+library(ggplot2)
 ```
 
-#Visual story telling part 1: green buildings
+# Q1 CSV
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
-
-```{r cars}
-green = read.csv('greenbuildings.csv', header=T)
-
+## Modeling
+```{r}
+green = read.csv('data/greenbuildings.csv', header=T)
 ```
 
 ```{r}
@@ -269,17 +270,9 @@ mean(not_green$Electricity_Costs)
 
 Going more in depth into the previous analysis, we did more data exploration to see if there were more patterns or other ones that strengthened our previous beliefs.
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-library(mosaic)
-library(tidyverse)
-library(ggplot2)
-```
-
-# Q1 CSV
 
 ```{r gb}
-gb <- read.csv("../STA380/data/greenbuildings.csv")
+gb <- read.csv("data/greenbuildings.csv")
 head(gb)
 gb$green_rating = as.factor(gb$green_rating)
 ```
@@ -359,15 +352,12 @@ gb_filtered %>%
 ```
 There is a small green building premium but it is not as high as the EXCEL Guru estimated.
 
-## Modeling
-So far we have seen how green building appear to have a higher rental rate, but we still cannot prove green building is having a higher rental rate. It could be an indirect results of others factors.
 
 # Visual story telling part 2: 
 ## Read Data
 
 ```{r warning=FALSE, message=FALSE,results='hide'}
 ABIA<- read.csv("https://raw.githubusercontent.com/jgscott/STA380/master/data/ABIA.csv")
-View(ABIA)
 dim(ABIA)
 str(ABIA)
 ```
@@ -574,11 +564,6 @@ acf(all_returns[,3])
 # conclusion: returns uncorrelated from one day to the next
 # (makes sense, otherwise it'd be an easy inefficiency to exploit,
 # and market inefficiencies that are exploited tend to disappear as a result)
-
-
-
-
-
 ```
 The starting wealth value is $100,000
 
@@ -832,7 +817,7 @@ library(RCurl)
 library(foreach)
 library(fpc)
 library(cluster)
-sm_file_name <- 'social_marketing.csv'
+sm_file_name <- 'data/social_marketing.csv'
 social_m_raw <- read.csv(sm_file_name)
 social_m <- read.csv(sm_file_name)
 ```
@@ -1187,18 +1172,8 @@ library(igraph)
 
 We read in the data using the reader plain fucntion.
 ```{r}
-# Read in the data
-
-#Defining reader plain function 
-readerPlain = function(fname){
-				readPlain(elem=list(content=readLines(fname)), 
-							id=fname, language='en') }
-							
-```
-
-```{r}
 #Reading all folders
-train=Sys.glob('C:/Users/lucye/Downloads/UT MSBA/STA S380/Part 2/STA380/data/ReutersC50/C50train/*')
+train=Sys.glob('data/ReutersC50/C50train/*')
 ```
 
 We read in all of the files for the training variables.
@@ -1219,12 +1194,12 @@ for (name in train)
 
 We also clean the file by combing through the lines and making the titles more readable by replacing the '.txt' part with the name of the file.
 ```{r}
-#Cleaning the file names
-readerPlain <- function(fname)
-  {
+#Defining reader plain function 
+readerPlain = function(fname){
 				readPlain(elem=list(content=readLines(fname)), 
-							id=fname, language='en') 
-  }
+							id=fname, language='en') }
+							
+#Cleaning the file names
 comb = lapply(comb_art, readerPlain) 
 names(comb) = comb_art
 names(comb) = sub('.txt', '', names(comb))
@@ -1459,8 +1434,7 @@ library(arulesViz)
 
 ```{r echo=FALSE}
 ## Read in the dataset and explore the structure
-setwd("/Users/siddchauhan/Documents/PROJECTS/UT MSBA/Stats bootcamp Files/Predictive Modeling/Predic Mod II Half/")
-groceries_raw = scan("groceries.txt", what = "", sep = "\n")
+groceries_raw = scan("data/groceries.txt", what = "", sep = "\n")
 head(groceries_raw)
 ```
 

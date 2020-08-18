@@ -28,7 +28,7 @@ readerPlain = function(fname){
 
 ```{r}
 #Reading all folders
-train=Sys.glob('C:/Users/lucye/Downloads/UT MSBA/STA S380/Part 2/STA380/data/ReutersC50/C50train/*')
+train=Sys.glob('data/ReutersC50/C50train/*')
 ```
 
 We read in all of the files for the training variables.

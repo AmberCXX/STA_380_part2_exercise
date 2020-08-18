@@ -1526,8 +1526,6 @@ Going more in depth into the previous analysis, we did more data
 exploration to see if there were more patterns or other ones that
 strengthened our previous beliefs.
 
-Q1 CSV
-======
 
 ``` r
 gb <- read.csv("https://raw.githubusercontent.com/jgscott/STA380/master/data/greenbuildings.csv")

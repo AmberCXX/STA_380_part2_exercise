@@ -1165,7 +1165,7 @@ not_green_rent ~ Rent + total_dd_07 + cluster_rent + Electricity_Costs +
 hist(not_green$Rent, 25)
 ```
 
-![](FinalSubmission_files/figure-markdown_github/unnamed-chunk-4-1.png)
+![](Raw%20RMD/FinalSubmission_files/figure-markdown_github/unnamed-chunk-4-1.png)
 
 ``` r
 mean(not_green$Rent)
@@ -1177,7 +1177,7 @@ mean(not_green$Rent)
 hist(green_only$Rent, 25)
 ```
 
-![](FinalSubmission_files/figure-markdown_github/unnamed-chunk-5-1.png)
+![](/Raw%20RMD/FinalSubmission_files/figure-markdown_github/unnamed-chunk-5-1.png)
 
 ``` r
 mean(green_only$Rent)
@@ -1466,7 +1466,7 @@ print(cor(green_only$Rent, green_only$Electricity_Costs))
 plot(green_only$Rent, green_only$Electricity_Costs)
 ```
 
-![](FinalSubmission_files/figure-markdown_github/unnamed-chunk-16-1.png)
+![](Raw%20RMD/FinalSubmission_files/figure-markdown_github/unnamed-chunk-16-1.png)
 
 ``` r
 cor(green$Rent, green$Electricity_Costs)
@@ -1478,7 +1478,7 @@ cor(green$Rent, green$Electricity_Costs)
 plot(green$Rent, green$Electricity_Costs)
 ```
 
-![](FinalSubmission_files/figure-markdown_github/unnamed-chunk-17-1.png)
+![](Raw%20RMD/FinalSubmission_files/figure-markdown_github/unnamed-chunk-17-1.png)
 
 ``` r
 print(cor(green_only$total_dd_07, green_only$Electricity_Costs))
@@ -1490,7 +1490,7 @@ print(cor(green_only$total_dd_07, green_only$Electricity_Costs))
 plot(green_only$total_dd_07, green_only$Electricity_Costs)
 ```
 
-![](FinalSubmission_files/figure-markdown_github/unnamed-chunk-18-1.png)
+![](Raw%20RMD/FinalSubmission_files/figure-markdown_github/unnamed-chunk-18-1.png)
 
 ``` r
 print(cor(green$total_dd_07, green$Electricity_Costs))
@@ -1502,7 +1502,7 @@ print(cor(green$total_dd_07, green$Electricity_Costs))
 plot(green$total_dd_07, green$Electricity_Costs)
 ```
 
-![](FinalSubmission_files/figure-markdown_github/unnamed-chunk-19-1.png)
+![](Raw%20RMD/FinalSubmission_files/figure-markdown_github/unnamed-chunk-19-1.png)
 
 ``` r
 print(cor(not_green$total_dd_07, not_green$Electricity_Costs))
@@ -1572,7 +1572,7 @@ Graphic Presentation and Analysis
 
 ### Does green housing have a higher rental price
 
-![](FinalSubmission_files/figure-markdown_github/pressure-1.png) There
+![](Raw%20RMD/FinalSubmission_files/figure-markdown_github/pressure-1.png) There
 is large variation and outliners in the dataset. The eco-friendly
 building appears to have higher rental rate comparatively, looking at
 the same cluster\_rent level.
@@ -1594,7 +1594,7 @@ ggplot(data = d1) +
   coord_flip()
 ```
 
-![](FinalSubmission_files/figure-markdown_github/unnamed-chunk-24-1.png)
+![](Raw%20RMD/FinalSubmission_files/figure-markdown_github/unnamed-chunk-24-1.png)
 **Proportionally, more green buildings have higher than market rental
 rate**
 
@@ -1630,7 +1630,7 @@ ggplot(data = gb) +
   labs(title = "Building Rent with different BUilding Age")
 ```
 
-![](FinalSubmission_files/figure-markdown_github/unnamed-chunk-26-1.png)
+![](Raw%20RMD/FinalSubmission_files/figure-markdown_github/unnamed-chunk-26-1.png)
 The green building did not show a strong pattern in higher rent, given
 the same building age
 
@@ -1663,7 +1663,7 @@ ggplot(data = gb_filtered) +
   labs(title = "Renovated Building in Local Market")
 ```
 
-![](FinalSubmission_files/figure-markdown_github/unnamed-chunk-27-1.png)
+![](Raw%20RMD/FinalSubmission_files/figure-markdown_github/unnamed-chunk-27-1.png)
 If both are renovated, green buildings generally have a higher rental
 price than the nongreen buildings in the same local market.
 
@@ -1673,13 +1673,13 @@ price than the nongreen buildings in the same local market.
 hist(gb$stories)
 ```
 
-![](FinalSubmission_files/figure-markdown_github/unnamed-chunk-28-1.png)
+![](Raw%20RMD/FinalSubmission_files/figure-markdown_github/unnamed-chunk-28-1.png)
 
 ``` r
 hist(gb$age)
 ```
 
-![](FinalSubmission_files/figure-markdown_github/unnamed-chunk-28-2.png)
+![](Raw%20RMD/FinalSubmission_files/figure-markdown_github/unnamed-chunk-28-2.png)
 
 ``` r
 gb_filtered = filter(gb, 20 > stories, stories > 10, age < 25, age > 10)
@@ -1689,7 +1689,7 @@ ggplot(data = gb_filtered) +
   labs(title = "Rent per Square of Green Building and NonGreen Building in Similar Condition")
 ```
 
-![](FinalSubmission_files/figure-markdown_github/unnamed-chunk-28-3.png)
+![](Raw%20RMD/FinalSubmission_files/figure-markdown_github/unnamed-chunk-28-3.png)
 
 ``` r
 gb_filtered %>%
@@ -1737,7 +1737,7 @@ ggcorr(data = ABIA, palette = "RdYlGn",
        label = TRUE, label_color = "black")
 ```
 
-![](FinalSubmission_files/figure-markdown_github/unnamed-chunk-30-1.png)
+![](Raw%20RMD/FinalSubmission_files/figure-markdown_github/unnamed-chunk-30-1.png)
 Carrier Delay and LateAircraf Delay with the 0.6 seem to be more
 correlated with Departure Delay and Arrival Delay than any other kinds
 of delay, why?
@@ -1866,7 +1866,7 @@ hist(x=ABIA$Month,
      ylab="Frequency") 
 ```
 
-![](FinalSubmission_files/figure-markdown_github/unnamed-chunk-34-1.png)
+![](Raw%20RMD/FinalSubmission_files/figure-markdown_github/unnamed-chunk-34-1.png)
 More flights during summer, probably because of the summer vacation.
 (May\~July)
 
@@ -1896,7 +1896,7 @@ hist(x=ABIA$DayOfWeek,
      ylab="Frequency") 
 ```
 
-![](FinalSubmission_files/figure-markdown_github/unnamed-chunk-35-1.png)
+![](Raw%20RMD/FinalSubmission_files/figure-markdown_github/unnamed-chunk-35-1.png)
 More flights on wednesday.
 
 \#\#Flights to Austin
@@ -2034,7 +2034,7 @@ densityplot( ~ Distance ,
 )
 ```
 
-![](FinalSubmission_files/figure-markdown_github/unnamed-chunk-38-1.png)
+![](Raw%20RMD/FinalSubmission_files/figure-markdown_github/unnamed-chunk-38-1.png)
 Mostly are short distance flghts less than 500 miles
 
 ``` r
@@ -2045,7 +2045,7 @@ boxplot(formula = AirTime ~ UniqueCarrier,
         col ="blue")       
 ```
 
-![](FinalSubmission_files/figure-markdown_github/unnamed-chunk-39-1.png)
+![](Raw%20RMD/FinalSubmission_files/figure-markdown_github/unnamed-chunk-39-1.png)
 B6 is JetBlue. This carrier seems to fly logner air time in minutes. Is
 it because its destinations tend to be farer?
 
@@ -2271,7 +2271,7 @@ TR/RUSSELL 1000 LOW VOLATILI
     ## on 'https://query2.finance.yahoo.com/v7/finance/download/LGLV?
     ## period1=-2208988800&period2=1597708800&interval=1d&events=split&crumb=bIYuOOdYVRY'
 
-![](FinalSubmission_files/figure-markdown_github/unnamed-chunk-43-1.png)![](FinalSubmission_files/figure-markdown_github/unnamed-chunk-43-2.png)![](FinalSubmission_files/figure-markdown_github/unnamed-chunk-43-3.png)![](FinalSubmission_files/figure-markdown_github/unnamed-chunk-43-4.png)![](FinalSubmission_files/figure-markdown_github/unnamed-chunk-43-5.png)![](FinalSubmission_files/figure-markdown_github/unnamed-chunk-43-6.png)
+![](Raw%20RMD/FinalSubmission_files/figure-markdown_github/unnamed-chunk-43-1.png)![](Raw%20RMD/FinalSubmission_files/figure-markdown_github/unnamed-chunk-43-2.png)![](Raw%20RMD/FinalSubmission_files/figure-markdown_github/unnamed-chunk-43-3.png)![](Raw%20RMD/FinalSubmission_files/figure-markdown_github/unnamed-chunk-43-4.png)![](Raw%20RMD/FinalSubmission_files/figure-markdown_github/unnamed-chunk-43-5.png)![](Raw%20RMD/FinalSubmission_files/figure-markdown_github/unnamed-chunk-43-6.png)
 
     ##                ClCl.SPYa ClCl.SVXYa    ClCl.QQQa ClCl.YYYa    ClCl.IWFa
     ## 2007-01-03            NA         NA           NA        NA           NA
@@ -2288,7 +2288,7 @@ TR/RUSSELL 1000 LOW VOLATILI
     ## 2007-01-09         NA
     ## 2007-01-10         NA
 
-![](FinalSubmission_files/figure-markdown_github/unnamed-chunk-43-7.png)![](FinalSubmission_files/figure-markdown_github/unnamed-chunk-43-8.png)![](FinalSubmission_files/figure-markdown_github/unnamed-chunk-43-9.png)![](FinalSubmission_files/figure-markdown_github/unnamed-chunk-43-10.png)![](FinalSubmission_files/figure-markdown_github/unnamed-chunk-43-11.png)
+![](Raw%20RMD/FinalSubmission_files/figure-markdown_github/unnamed-chunk-43-7.png)![](Raw%20RMD/FinalSubmission_files/figure-markdown_github/unnamed-chunk-43-8.png)![](Raw%20RMD/FinalSubmission_files/figure-markdown_github/unnamed-chunk-43-9.png)![](Raw%20RMD/FinalSubmission_files/figure-markdown_github/unnamed-chunk-43-10.png)![](Raw%20RMD/FinalSubmission_files/figure-markdown_github/unnamed-chunk-43-11.png)
 The starting wealth value is $100,000
 
 Simulation 1: Modeling a safe portfolio
@@ -2426,7 +2426,7 @@ all_returns = as.matrix(na.omit(all_returns))
 pairs(all_returns)
 ```
 
-![](FinalSubmission_files/figure-markdown_github/unnamed-chunk-44-1.png)
+![](Raw%20RMD/FinalSubmission_files/figure-markdown_github/unnamed-chunk-44-1.png)
 
 ``` r
 # Sample a random return from the empirical joint distribution
@@ -2483,20 +2483,20 @@ head(sim1)
 hist(sim1[,n_days], 50)
 ```
 
-![](FinalSubmission_files/figure-markdown_github/unnamed-chunk-44-2.png)
+![](Raw%20RMD/FinalSubmission_files/figure-markdown_github/unnamed-chunk-44-2.png)
 
 ``` r
 plot(density(sim1[,n_days]))
 ```
 
-![](FinalSubmission_files/figure-markdown_github/unnamed-chunk-44-3.png)
+![](Raw%20RMD/FinalSubmission_files/figure-markdown_github/unnamed-chunk-44-3.png)
 
 ``` r
 # Profit/loss
 hist(sim1[,n_days]- initial_wealth, breaks=30)
 ```
 
-![](FinalSubmission_files/figure-markdown_github/unnamed-chunk-44-4.png)
+![](Raw%20RMD/FinalSubmission_files/figure-markdown_github/unnamed-chunk-44-4.png)
 
 ``` r
 conf_5Per = confint(sim1[,n_days]- initial_wealth, level = 0.90)$'5%'
@@ -2518,9 +2518,9 @@ cat('\n5% Value at Risk for safe portfolio-',conf_5Per, "\n")
     ## 
     ## 5% Value at Risk for safe portfolio- 332156.9
 
-![](FinalSubmission_files/figure-markdown_github/unnamed-chunk-46-1.png)
+![](Raw%20RMD/FinalSubmission_files/figure-markdown_github/unnamed-chunk-46-1.png)
 
-![](FinalSubmission_files/figure-markdown_github/unnamed-chunk-47-1.png)![](FinalSubmission_files/figure-markdown_github/unnamed-chunk-47-2.png)![](FinalSubmission_files/figure-markdown_github/unnamed-chunk-47-3.png)
+![](Raw%20RMD/FinalSubmission_files/figure-markdown_github/unnamed-chunk-47-1.png)![](Raw%20RMD/FinalSubmission_files/figure-markdown_github/unnamed-chunk-47-2.png)![](Raw%20RMD/FinalSubmission_files/figure-markdown_github/unnamed-chunk-47-3.png)
 
     ## Confidence Interval from Bootstrap Distribution (5000 replicates)
 
@@ -2537,9 +2537,9 @@ Using ETFs: SVXY, YYY, IWF
 
 Distributed 90% of the total wealth among the low performing ETFs
 
-![](FinalSubmission_files/figure-markdown_github/unnamed-chunk-50-1.png)
+![](Raw%20RMD/FinalSubmission_files/figure-markdown_github/unnamed-chunk-50-1.png)
 
-![](FinalSubmission_files/figure-markdown_github/unnamed-chunk-51-1.png)![](FinalSubmission_files/figure-markdown_github/unnamed-chunk-51-2.png)![](FinalSubmission_files/figure-markdown_github/unnamed-chunk-51-3.png)
+![](Raw%20RMD/FinalSubmission_files/figure-markdown_github/unnamed-chunk-51-1.png)![](Raw%20RMD/FinalSubmission_files/figure-markdown_github/unnamed-chunk-51-2.png)![](Raw%20RMD/FinalSubmission_files/figure-markdown_github/unnamed-chunk-51-3.png)
 
     ## Confidence Interval from Bootstrap Distribution (5000 replicates)
 
@@ -2551,7 +2551,7 @@ Distributed 90% of the total wealth among the low performing ETFs
 
 Model 3: Using equal weights for all ETFs
 
-![](FinalSubmission_files/figure-markdown_github/unnamed-chunk-53-1.png)![](FinalSubmission_files/figure-markdown_github/unnamed-chunk-53-2.png)![](FinalSubmission_files/figure-markdown_github/unnamed-chunk-53-3.png)
+![](Raw%20RMD/FinalSubmission_files/figure-markdown_github/unnamed-chunk-53-1.png)![](Raw%20RMD/FinalSubmission_files/figure-markdown_github/unnamed-chunk-53-2.png)![](Raw%20RMD/FinalSubmission_files/figure-markdown_github/unnamed-chunk-53-3.png)
 
     ## Confidence Interval from Bootstrap Distribution (5000 replicates)
 
@@ -2561,7 +2561,7 @@ Model 3: Using equal weights for all ETFs
     ## 
     ## 5% Value at Risk for High portfolio- -99874.04
 
-![](FinalSubmission_files/figure-markdown_github/unnamed-chunk-55-1.png)
+![](Raw%20RMD/FinalSubmission_files/figure-markdown_github/unnamed-chunk-55-1.png)
 
 \#\#Summary
 
@@ -2585,7 +2585,7 @@ ETFs in building our models.
 
 \#Question 4: Market Segmentation
 
-![](FinalSubmission_files/figure-markdown_github/unnamed-chunk-60-1.png)
+![](Raw%20RMD/FinalSubmission_files/figure-markdown_github/unnamed-chunk-60-1.png)
 
     ##        V1               V2               V3                V4        
     ##  Min.   :0.4193   Min.   :0.2522   Min.   : 0.3408   Min.   :0.3933  
@@ -2609,11 +2609,11 @@ ETFs in building our models.
     ##  3rd Qu.: 1.3630   3rd Qu.:0.7063  
     ##  Max.   :11.1836   Max.   :1.2480
 
-<img src="FinalSubmission_files/figure-markdown_github/unnamed-chunk-62-1.png" width="50%" /><img src="FinalSubmission_files/figure-markdown_github/unnamed-chunk-62-2.png" width="50%" /><img src="FinalSubmission_files/figure-markdown_github/unnamed-chunk-62-3.png" width="50%" /><img src="FinalSubmission_files/figure-markdown_github/unnamed-chunk-62-4.png" width="50%" /><img src="FinalSubmission_files/figure-markdown_github/unnamed-chunk-62-5.png" width="50%" /><img src="FinalSubmission_files/figure-markdown_github/unnamed-chunk-62-6.png" width="50%" /><img src="FinalSubmission_files/figure-markdown_github/unnamed-chunk-62-7.png" width="50%" /><img src="FinalSubmission_files/figure-markdown_github/unnamed-chunk-62-8.png" width="50%" /><img src="FinalSubmission_files/figure-markdown_github/unnamed-chunk-62-9.png" width="50%" /><img src="FinalSubmission_files/figure-markdown_github/unnamed-chunk-62-10.png" width="50%" />
+<img src="Raw%20RMD/FinalSubmission_files/figure-markdown_github/unnamed-chunk-62-1.png" width="50%" /><img src="Raw%20RMD/FinalSubmission_files/figure-markdown_github/unnamed-chunk-62-2.png" width="50%" /><img src="Raw%20RMD/FinalSubmission_files/figure-markdown_github/unnamed-chunk-62-3.png" width="50%" /><img src="Raw%20RMD/FinalSubmission_files/figure-markdown_github/unnamed-chunk-62-4.png" width="50%" /><img src="Raw%20RMD/FinalSubmission_files/figure-markdown_github/unnamed-chunk-62-5.png" width="50%" /><img src="Raw%20RMD/FinalSubmission_files/figure-markdown_github/unnamed-chunk-62-6.png" width="50%" /><img src="Raw%20RMD/FinalSubmission_files/figure-markdown_github/unnamed-chunk-62-7.png" width="50%" /><img src="Raw%20RMD/FinalSubmission_files/figure-markdown_github/unnamed-chunk-62-8.png" width="50%" /><img src="Raw%20RMD/FinalSubmission_files/figure-markdown_github/unnamed-chunk-62-9.png" width="50%" /><img src="Raw%20RMD/FinalSubmission_files/figure-markdown_github/unnamed-chunk-62-10.png" width="50%" />
 
 #### **Correlation plot**
 
-![](FinalSubmission_files/figure-markdown_github/unnamed-chunk-64-1.png)
+![](Raw%20RMD/FinalSubmission_files/figure-markdown_github/unnamed-chunk-64-1.png)
 
 A lot variables are correlated to each other from the different
 clusters. An example can be seen online gaming and college university
@@ -2627,7 +2627,7 @@ Continuing onto futher PCA Analysis
 
 #### **Principal Component Analysis**
 
-![](FinalSubmission_files/figure-markdown_github/unnamed-chunk-66-1.png)
+![](Raw%20RMD/FinalSubmission_files/figure-markdown_github/unnamed-chunk-66-1.png)
 
 ``` r
 cumsum(pca_var1)[10]
@@ -2644,7 +2644,7 @@ Picked 10 PC to use for futher analysis.
 
 #### **K-Means**
 
-![](FinalSubmission_files/figure-markdown_github/unnamed-chunk-71-1.png)
+![](Raw%20RMD/FinalSubmission_files/figure-markdown_github/unnamed-chunk-71-1.png)
 
 The code chunk above takes a while to run.
 
@@ -2657,14 +2657,14 @@ where our points are using 5 clusters.
 
 #### **Cluster visualization**
 
-![](FinalSubmission_files/figure-markdown_github/unnamed-chunk-74-1.png)
+![](Raw%20RMD/FinalSubmission_files/figure-markdown_github/unnamed-chunk-74-1.png)
 
 Some of the separation of the clusters seem intuitive enough to make
 more sense of them and figure out what they represent in the analysis.
 
 #### **Results**
 
-<img src="FinalSubmission_files/figure-markdown_github/unnamed-chunk-76-1.png" width="50%" /><img src="FinalSubmission_files/figure-markdown_github/unnamed-chunk-76-2.png" width="50%" /><img src="FinalSubmission_files/figure-markdown_github/unnamed-chunk-76-3.png" width="50%" /><img src="FinalSubmission_files/figure-markdown_github/unnamed-chunk-76-4.png" width="50%" /><img src="FinalSubmission_files/figure-markdown_github/unnamed-chunk-76-5.png" width="50%" />
+<img src="Raw%20RMD/FinalSubmission_files/figure-markdown_github/unnamed-chunk-76-1.png" width="50%" /><img src="Raw%20RMD/FinalSubmission_files/figure-markdown_github/unnamed-chunk-76-2.png" width="50%" /><img src="Raw%20RMD/FinalSubmission_files/figure-markdown_github/unnamed-chunk-76-3.png" width="50%" /><img src="Raw%20RMD/FinalSubmission_files/figure-markdown_github/unnamed-chunk-76-4.png" width="50%" /><img src="Raw%20RMD/FinalSubmission_files/figure-markdown_github/unnamed-chunk-76-5.png" width="50%" />
 
 Based on the K-Means clustering, we can identify distinct market
 segments that NutrientH20 can potentially leverage to design specific
@@ -2743,7 +2743,7 @@ lesser items per basket
     ## 2 artif. sweetener
     ## 3   baby cosmetics
 
-![](FinalSubmission_files/figure-markdown_github/unnamed-chunk-81-1.png)
+![](Raw%20RMD/FinalSubmission_files/figure-markdown_github/unnamed-chunk-81-1.png)
 
 #### **Let’s explore rules with support \> 0.05, confidence \> 0.1 and length \<= 2 using the ‘apriori’ algorithm**
 
@@ -2778,18 +2778,18 @@ the most frequently bought items.
     ## [5] 1.513634 736  
     ## [6] 1.513634 736
 
-![](FinalSubmission_files/figure-markdown_github/unnamed-chunk-83-1.png)
+![](Raw%20RMD/FinalSubmission_files/figure-markdown_github/unnamed-chunk-83-1.png)
 
 #### **Let’s decrease support further and increase confidence slightly with support \> 0.02, confidence \> 0.2 and length \<= 2**
 
 This item set contains 72 rules and includes a lot more items. However,
 whole milk still seems to be a common occurence.
 
-![](FinalSubmission_files/figure-markdown_github/unnamed-chunk-85-1.png)
+![](Raw%20RMD/FinalSubmission_files/figure-markdown_github/unnamed-chunk-85-1.png)
 
 #### **Let us increase the confidence level and decrease the support further. Let’s explore rules with support \> 0.0015, confidence \> 0.8 and length \<= 2**
 
-![](FinalSubmission_files/figure-markdown_github/unnamed-chunk-87-1.png)
+![](Raw%20RMD/FinalSubmission_files/figure-markdown_github/unnamed-chunk-87-1.png)
 
 Lift=ConfidenceExpected Confidence=P(A∩B)P(A).P(B). Lift is the factor
 by which, the co-occurrence of A and B exceeds the expected probability

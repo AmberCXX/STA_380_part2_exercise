@@ -1166,9 +1166,20 @@ library(tidyverse)
 library(arules)  # has a big ecosystem of packages built around it
 library(arulesViz)
 library(igraph) 
+library(tm)
 ```
 
 We read in the data using the reader plain fucntion.
+```{r}
+# Read in the data
+
+#Defining reader plain function 
+readerPlain = function(fname){
+				readPlain(elem=list(content=readLines(fname)), 
+							id=fname, language='en') }
+							
+```
+
 ```{r}
 #Reading all folders
 train=Sys.glob('data/ReutersC50/C50train/*')
@@ -1192,12 +1203,12 @@ for (name in train)
 
 We also clean the file by combing through the lines and making the titles more readable by replacing the '.txt' part with the name of the file.
 ```{r}
-#Defining reader plain function 
-readerPlain = function(fname){
-				readPlain(elem=list(content=readLines(fname)), 
-							id=fname, language='en') }
-							
 #Cleaning the file names
+readerPlain <- function(fname)
+  {
+				readPlain(elem=list(content=readLines(fname)), 
+							id=fname, language='en') 
+  }
 comb = lapply(comb_art, readerPlain) 
 names(comb) = comb_art
 names(comb) = sub('.txt', '', names(comb))
